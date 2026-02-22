@@ -76,7 +76,7 @@ The flick gesture determines kick power and horizontal aim. It follows the stand
 |-------|-------------|-------|
 | **Swipe vector** | `endPos - startPos` | Raw pixel displacement |
 | **Swipe speed** | `swipeVector.length / elapsed_time` | Pixels per second |
-| **Power (0.0–1.0)** | `clamp(swipeSpeed / MAX_FLICK_SPEED, 0.0, 1.0)` | Normalized against a tunable max; see `physics-and-tuning.md` Section 7 |
+| **Power (0.0–1.0)** | `clamp(swipeSpeed / MAX_FLICK_SPEED, 0.0, 1.0)` | Normalized against a tunable max; see `physics-and-tuning.md` Section 8 |
 | **Direction (horizontal)** | `atan2(swipeVector.y, swipeVector.x)` | Radians; predominantly vertical swipes aim straight; angled swipes aim left or right |
 
 ### Rejection Threshold
@@ -86,7 +86,7 @@ If `swipeSpeed < MIN_FLICK_SPEED`, the gesture is treated as a cancelled drag, n
 - Transition AIMING → READY (no ball launch).
 - No `FlickResult` is produced.
 
-`MIN_FLICK_SPEED` is a tuning constant (suggested starting value: **200 px/s**; see `physics-and-tuning.md` Section 7).
+`MIN_FLICK_SPEED` is a tuning constant (suggested starting value: **200 px/s**; see `physics-and-tuning.md` Section 8).
 
 ### FlickResult Data Class
 
@@ -117,7 +117,7 @@ Steer input is active **only** during the BALL_IN_FLIGHT state. It applies spin 
 | **Spin magnitude** | Proportional to swipe speed on each axis: `sqrt(deltaX² + deltaY²) / deltaTime` — the combined displacement determines overall intensity, then split by axis weight |
 | **Accumulation** | Each swipe's spin is **added** to the ball's current spin values (`spinX`, `spinY`). Spin is cumulative across multiple swipes, subject to the swipe budget. |
 | **Cooldown** | None — the player can swipe continuously or in rapid bursts within the budget |
-| **Swipe budget** | 4 swipes per flight. Swipes 1–2 at full effect (×1.0), 3rd at ~25% effect (×0.25), 4th+ at 0% effect (×0.0). Resets on each new kick. |
+| **Swipe budget** | Graduated 4-tier curve with no hard cap. Swipe 1 at ×1.0, 2nd at ×0.6, 3rd at ×0.25, 4th+ at ×0.1 (residual floor). Swipes beyond the 3rd all use the ×0.1 floor — unlimited but negligible. Resets on each new kick. |
 | **Swipe counter** | Increments on each distinct `touchDown` → `touchUp` gesture during BALL_IN_FLIGHT; resets when the state exits (transition to SCORING or IMPACT_MISSED) |
 
 ### Steer Processing
@@ -133,8 +133,9 @@ magnitude = sqrt(deltaX² + deltaY²)
 lateralComponent = deltaX / magnitude
 depthComponent   = deltaY / magnitude
 
-// Apply diminishing returns based on swipe count
-diminish = STEER_DIMINISH_CURVE[swipeCount]  // [1.0, 1.0, 0.25, 0.0]
+// Apply graduated diminishing returns based on swipe count
+index = min(swipeCount, STEER_DIMINISH_CURVE.size - 1)
+diminish = STEER_DIMINISH_CURVE[index]  // [1.0, 0.6, 0.25, 0.1]
 
 // Compute spin deltas on both axes
 spinDeltaX = lateralComponent * swipeSpeed * STEER_SENSITIVITY * diminish
@@ -145,9 +146,9 @@ ball.spinX += spinDeltaX
 ball.spinY += spinDeltaY
 ```
 
-`STEER_SENSITIVITY` is a tuning constant that controls how responsive steering feels (see `physics-and-tuning.md` Section 7). `STEER_DIMINISH_CURVE` is an array defining the multiplier for each swipe index (see `physics-and-tuning.md` Section 7). The accumulated `ball.spinX` and `ball.spinY` values feed into the Magnus force calculation each physics frame.
+`STEER_SENSITIVITY` is a tuning constant that controls how responsive steering feels (see `physics-and-tuning.md` Section 8). `STEER_DIMINISH_CURVE` is an array defining the multiplier for each swipe index (see `physics-and-tuning.md` Section 8). The accumulated `ball.spinX` and `ball.spinY` values feed into the Magnus force calculation each physics frame.
 
-> **Implementation note:** Within each swipe gesture (a single `touchDown` → `touchUp` cycle), the player gets continuous, analog-feeling control via `touchDragged` — a slow drag produces a gentle curve; a fast flick of the thumb produces a sharp bend. The diminishing returns apply across discrete swipe gestures (each `touchDown` → `touchUp` cycle increments the swipe counter), creating a strategic budget that rewards decisive steering over spam.
+> **Implementation note:** Within each swipe gesture (a single `touchDown` → `touchUp` cycle), the player gets continuous, analog-feeling control via `touchDragged` — a slow drag produces a gentle curve; a fast flick of the thumb produces a sharp bend. The diminishing returns apply across discrete swipe gestures (each `touchDown` → `touchUp` cycle increments the swipe counter). The ×0.1 floor means swipes beyond the 3rd are not dead — they form a "nursing" region where persistent small corrections can still nudge the ball. The `min(swipeCount, curve.size - 1)` indexing ensures all swipes past index 3 clamp to the last value (0.1) with no hard cap.
 
 ---
 

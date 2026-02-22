@@ -94,7 +94,7 @@ Spin is the core mid-flight mechanic. It transforms a launched ball's straight-l
 | **spinX** | Positive = rightward lateral curve, negative = leftward lateral curve |
 | **spinY** | Positive = deeper into scene (depth curve), negative = shallower (pulls ball back) |
 | **Initial value** | Both `0.0` at launch (no inherent spin from the flick) |
-| **Accumulation** | Each steer swipe adds `spinDeltaX` and `spinDeltaY` to the current spin values, subject to the 4-swipe diminishing multiplier (see `input-system.md` Section 4) |
+| **Accumulation** | Each steer swipe adds `spinDeltaX` and `spinDeltaY` to the current spin values, subject to the graduated diminishing curve `[1.0, 0.6, 0.25, 0.1]` with a 0.1 floor (see `input-system.md` Section 4) |
 | **Decay formula** | `spinX = spinX * (1 - SPIN_DECAY * dt)` and `spinY = spinY * (1 - SPIN_DECAY * dt)` — both components decay independently via exponential decay toward zero |
 | **Decay rate** | `SPIN_DECAY` at 2.0/s: each spin component halves roughly every 0.35 seconds |
 
@@ -234,7 +234,7 @@ All physics constants in one table. Start with the suggested values, then tune u
 | 11 | `BIG_BOMB_POWER_THRESHOLD` | 0.9 | 0.8–0.95 | Minimum power for Big Bomb activation |
 | 12 | `BIG_BOMB_SLIDER_THRESHOLD` | 0.7 | 0.6–0.85 | Minimum slider value for Big Bomb activation |
 | 13 | `FIXED_TIMESTEP` | 1/60 s | 1/30–1/120 | Physics step interval; smaller = more accurate but costlier |
-| 14 | `STEER_DIMINISH_CURVE` | [1.0, 1.0, 0.25, 0.0] | — | Multiplier per swipe index (0-based); swipes beyond index 3 use the last value (0.0) |
+| 14 | `STEER_DIMINISH_CURVE` | [1.0, 0.6, 0.25, 0.1] | — | Graduated multiplier per swipe index (0-based); swipes beyond index 3 clamp to the last value (0.1) — no hard cap |
 | 15 | `SHADOW_FADE_HEIGHT` | 400 px | 200–600 | Ball height at which the shadow reaches minimum opacity (0.1) |
 
 ---

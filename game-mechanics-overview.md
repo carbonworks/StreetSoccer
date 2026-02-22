@@ -12,7 +12,7 @@ Every kick uses three inputs: an **angle slider** set before (or during) the fli
 | **Flick** | Kick power (swipe speed/length) and horizontal aim (swipe direction) | AIMING state — touch down to begin, release to launch |
 | **Steer swipes** | Lateral and depth spin via the Magnus effect — curves the ball left/right (X-axis swipes) and deeper/shallower (Y-axis swipes) | BALL_IN_FLIGHT state — full-screen touch zone; cumulative and decay over time |
 
-The slider decouples angle from power, so a fast flick can produce either a screaming line drive (slider low) or a towering Big Bomb arc (slider high). Steer swipes add a skill layer: short shots leave little time to correct, while long shots give several seconds of steering opportunity. Steer effectiveness diminishes: swipes 1–2 at full effect, 3rd minimal, 4th+ has no effect. Each kick resets the budget.
+The slider decouples angle from power, so a fast flick can produce either a screaming line drive (slider low) or a towering Big Bomb arc (slider high). Steer swipes add a skill layer: short shots leave little time to correct, while long shots give several seconds of steering opportunity. Steer effectiveness follows a **graduated diminishing returns** curve: swipe 1 at full effect (×1.0), 2nd reduced (×0.6), 3rd minimal (×0.25), 4th+ a tiny residual (×0.1, no hard cap). Each kick resets the budget.
 
 > **Detail:** `input-system.md` defines the full touch architecture — pointer tracking, zone boundaries, gesture detection, and the `FlickResult` data class.
 
@@ -65,7 +65,7 @@ Key characteristics:
 - Drag is light — short shots are barely affected, but long Big Bombs lose noticeable speed
 - Magnus effect (spin-induced curve from steer swipes on both lateral and depth axes) scales with both spin and ball speed, so fast balls curve more dramatically
 - Spin decays exponentially, producing smooth curves that gradually straighten
-- Steer swipes have a budget of 4 per kick, with diminishing effect — players must steer decisively
+- Steer swipes follow a graduated budget (×1.0 → ×0.6 → ×0.25 → ×0.1 floor) — the first two swipes are decisive, while the residual ×0.1 tail allows a "nursing" technique for persistent small corrections
 - A ground shadow tracks the ball's position, fading with altitude, to help the player gauge depth and height
 
 > **Detail:** `physics-and-tuning.md` Sections 2–4 contain the per-frame update pseudocode, Magnus force equation, and drag model. Section 5 defines the ball shadow. Section 8 lists all tuning constants with suggested values and valid ranges.

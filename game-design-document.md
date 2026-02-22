@@ -84,15 +84,15 @@ Once the ball is airborne, the player can swipe across the screen to add **spin*
 | **Rapid repeated swipes** | Heavy accumulated spin — hard bend for dramatic corrections |
 | **No swipes** | Ball follows its original flick trajectory unchanged |
 
-Spin is **cumulative** and **two-axis** — each swipe adds lateral (X) and depth (Y) spin based on swipe direction and speed. Spin **decays over time**, so sustained correction requires repeated input. However, steering has **diminishing returns**: swipes 1–2 apply at full effect, the 3rd swipe has minimal impact (~25%), and the 4th+ swipe has no effect. The swipe budget resets with each new kick.
+Spin is **cumulative** and **two-axis** — each swipe adds lateral (X) and depth (Y) spin based on swipe direction and speed. Spin **decays over time**, so sustained correction requires repeated input. However, steering has **graduated diminishing returns**: the 1st swipe applies at full effect (×1.0), the 2nd at reduced effect (×0.6), the 3rd at minimal effect (×0.25), and the 4th+ at a tiny residual (×0.1). There is **no hard cap** — swipes beyond the 3rd still work, just barely. The budget resets with each new kick.
 
 #### Skill Depth
 
 - **Short shots** (nearby windows, garage doors) leave little flight time to steer — the initial flick must be precise
 - **Long shots** (Big Bombs down the corridor) give the player several seconds of flight time and multiple steering opportunities
 - **Moving targets** can be tracked mid-flight — flick toward the target's general area, then steer into it as it moves
-- The **4-swipe budget** creates tactical decision-making: players must choose when and how to steer rather than spamming corrections
-- This creates a natural skill gradient: beginners rely on the flick alone, experienced players layer in spin to bend shots around obstacles and into difficult targets
+- The **graduated steer budget** creates tactical decision-making: the first two swipes are the most valuable, so players must choose when and how to steer rather than spamming corrections. The residual ×0.1 tail allows a "nursing" technique — persistent small corrections that nudge the ball over many swipes
+- This creates an expanded **skill gradient**: beginners rely on the flick alone, intermediate players learn to use their first two full-effect swipes decisively, and experts nurse the ball with residual swipes to thread difficult angles
 
 ### Trajectory Preview
 
@@ -337,8 +337,9 @@ Every kick outcome should produce clear, satisfying feedback so the player immed
 | **Steer swipe applied** | Ball rotation speed increases visibly; a curved motion trail appears behind the ball | Subtle whoosh / spin sound on each swipe |
 | **Heavy spin accumulated** | Trail becomes more pronounced and colorful; ball wobbles slightly | Spin sound intensifies in pitch |
 | **Spin decay** | Trail gradually fades back to normal | No audio — silent decay feels natural |
-| **Diminished swipe (3rd)** | Swipe trail renders shorter and faded; a brief muted particle burst indicates reduced effect | Dampened whoosh — noticeably quieter than swipes 1–2 |
-| **Exhausted swipes (4th+)** | No trail change; a subtle "locked" icon or brief gray flash near the ball indicates no effect | No spin sound — silence signals the budget is spent |
+| **Diminished swipe (2nd)** | Swipe trail renders slightly shorter; a brief particle burst indicates reduced effect | Whoosh at reduced volume — noticeably softer than the 1st swipe |
+| **Weak swipe (3rd)** | Swipe trail renders short and faded; muted particle burst | Dampened whoosh — quiet, signaling minimal effect |
+| **Residual swipes (4th+)** | Very faint, short trail; steer budget meter pulses faintly to show the input registered | Faint whoosh — barely audible, confirming the swipe had a tiny effect |
 | **Ball shadow** | A dark ellipse rendered on the ground plane directly below the ball; scales with depth (same formula as the ball), opacity fades as the ball rises | No audio — the shadow is a purely visual depth/height cue |
 
 Spin feedback must be immediate and readable so the player sees the connection between their steer swipe and the ball's change in curvature.
