@@ -236,6 +236,8 @@ All physics constants in one table. Start with the suggested values, then tune u
 | 13 | `FIXED_TIMESTEP` | 1/60 s | 1/30–1/120 | Physics step interval; smaller = more accurate but costlier |
 | 14 | `STEER_DIMINISH_CURVE` | [1.0, 0.6, 0.25, 0.1] | — | Graduated multiplier per swipe index (0-based); swipes beyond index 3 clamp to the last value (0.1) — no hard cap |
 | 15 | `SHADOW_FADE_HEIGHT` | 400 px | 200–600 | Ball height at which the shadow reaches minimum opacity (0.1) |
+| 16 | `BIG_BOMB_COLOR_START_DEPTH` | 0.25 | 0.10–0.40 | Normalized corridor depth at which the red overlay begins (0 = entry, 1 = max depth) |
+| 17 | `BIG_BOMB_COLOR_MAX_DEPTH` | 0.90 | 0.70–1.00 | Normalized corridor depth at which the red overlay reaches full intensity |
 
 ---
 

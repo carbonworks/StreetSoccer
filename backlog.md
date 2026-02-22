@@ -8,11 +8,11 @@
 
 ## Quick Fixes
 
-- [ ] Fix project name in `state-machine.md` line 7 — Still says "Suburban Striker" instead of "Street Soccer"
+- [x] Fix project name in `state-machine.md` line 7 — Still says "Suburban Striker" instead of "Street Soccer" (committed as `0c6a645`)
 
 ## Documentation — Needed Before Implementation
 
-- [ ] UI/HUD Layout Spec — Unified spec for all on-screen elements: score popups (position, duration, font, animation), streak multiplier badge (states, pulsing), angle slider visuals (rail, thumb, angle icon), trajectory preview dotted arc, swipe trail rendering, exhausted-swipe indicator, ball shadow appearance. Currently scattered across GDD Section 9, `input-system.md`, and `physics-and-tuning.md` with no screen-position or sizing details.
+- [x] UI/HUD Layout Spec — Delivered as `ui-hud-layout.md`: 11-section spec covering session score, streak badge, steer budget meter, angle slider, score popups, pause icon, Big Bomb meteor feedback, trajectory preview, ball shadow, and out-of-scope list
 - [ ] Audio Spec — Master list of all sound effects with asset IDs, format, duration, volume levels, and mixing/priority rules. GDD Section 9 describes ~12 cues by feel ("crisp glass-break", "deep metallic clang", etc.) but no implementable asset definitions exist.
 - [ ] Save & Persistence Spec — Define storage approach (SharedPreferences vs. SQLite), data schema for stats (GDD Section 7), session start/end definition, cosmetic unlock state, and season/variant unlock progress. Currently described only in design terms.
 - [ ] Menu & Navigation Flow Spec — MAIN_MENU state exists in `state-machine.md` but no spec for: button layout, variant selection screen, settings menu structure (trajectory preview toggle, slider side preference, audio settings), pause menu options, back/exit flow.
@@ -31,6 +31,11 @@
 - [ ] Tips System Spec — GDD Section 10 defines 4 starter tips but no spec for: rendering/dismissal UI, trigger logic implementation, tip rotation/frequency, extensibility for new tips.
 - [ ] Trajectory Preview Rendering Spec — Described as a toggleable setting (GDD Section 3) but no implementation details: dotted arc calculation, update frequency during AIMING vs. BALL_IN_FLIGHT, visual style (dot spacing, color, fade), performance considerations.
 - [ ] Accessibility & Localization — Colorblind mode considerations, text localization approach, font sizing for screen densities, touch target sizing.
+
+## Beta Scope
+
+- [ ] Big Bomb Meteor Sprite Set — Replace the alpha-build red overlay with a dedicated fireball sprite + flame trail for Big Bomb flights. See `ui-hud-layout.md` Section 11.
+- [ ] Handedness Configuration — Settings toggle to move the angle slider to the right edge and mirror the steer budget meter. See `ui-hud-layout.md` Section 11.
 
 ## Pending (Carried Over)
 

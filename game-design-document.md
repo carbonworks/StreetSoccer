@@ -312,6 +312,7 @@ Every kick outcome should produce clear, satisfying feedback so the player immed
 | **Vehicle hit** | Car alarm flash, score popup | Car alarm chirp + impact thud |
 | **Drone hit** | Sparks + spiral fall animation, score popup | Electronic fizz + crash |
 | **Big Bomb launch** | Screen-edge light flash, camera shake | Low bass "boom" on launch |
+| **Big Bomb in-flight** | Ball color shifts progressively toward red as it travels deeper into the corridor; meteor-like visual at maximum depth | No additional audio — the visual ramp is the primary feedback |
 
 **Misses** (no score — triggers IMPACT_MISSED state, resets streak):
 
@@ -343,6 +344,21 @@ Every kick outcome should produce clear, satisfying feedback so the player immed
 | **Ball shadow** | A dark ellipse rendered on the ground plane directly below the ball; scales with depth (same formula as the ball), opacity fades as the ball rises | No audio — the shadow is a purely visual depth/height cue |
 
 Spin feedback must be immediate and readable so the player sees the connection between their steer swipe and the ball's change in curvature.
+
+### Big Bomb Distance Feedback
+
+During a Big Bomb flight, the ball provides continuous visual feedback about how deep it has traveled into the corridor. This is communicated through a **color ramp** — an alpha-blended red overlay on the ball sprite that intensifies with depth.
+
+| Stage | Depth Range | Ball Appearance |
+|-------|------------|-----------------|
+| **Entry** | 0–25% of corridor | Normal ball color — no overlay |
+| **Mid** | 25–50% | Faint red tint begins — overlay alpha ramps up |
+| **Deep** | 50–90% | Strong red glow — ball clearly "heating up" |
+| **Max** | 90–100% | Full red with bright glow — meteor visual at peak depth |
+
+The color ramp uses `BIG_BOMB_COLOR_START_DEPTH` (0.25) and `BIG_BOMB_COLOR_MAX_DEPTH` (0.90) as tuning constants (see `physics-and-tuning.md` Section 8). The overlay is a simple alpha-blended red layer on the ball sprite — no separate particle system required for the alpha build.
+
+> **Beta note:** A future enhancement may replace the alpha-blended overlay with a dedicated meteor sprite set (fireball trailing flames) for a more dramatic effect. The alpha implementation should be structured so the sprite swap is straightforward.
 
 ### Score Popups
 

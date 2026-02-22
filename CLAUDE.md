@@ -14,10 +14,11 @@ Street Soccer is a **2.5D arcade game** for Android (LibGDX + Kotlin). The playe
 |------|------|-----------------|
 | `game-design-document.md` | **Design authority** — the "North Star" for what the game feels like. Update this first when mechanics change. | Primary |
 | `input-system.md` | Technical spec for touch input: angle slider, flick detection, steer swipe detection (2-axis + diminishing returns) | Derives from GDD Section 3 |
-| `physics-and-tuning.md` | Physics model: flight equations, dual-axis Magnus effect (spinX/spinY), drag, Big Bomb, ball shadow, 15 tuning constants | Derives from GDD Section 3 |
+| `physics-and-tuning.md` | Physics model: flight equations, dual-axis Magnus effect (spinX/spinY), drag, Big Bomb, ball shadow, 17 tuning constants | Derives from GDD Section 3 |
 | `environment-z-depth-and-collosion.md` | Z-layer architecture (5 layers), collision mapping, depth scaling formula, ball shadow rendering zones | Spatial framework |
 | `state-machine.md` | Game states (BOOT → LOADING → MAIN_MENU → READY → AIMING → BALL_IN_FLIGHT → SCORING/IMPACT_MISSED → READY) | Control flow |
 | `game-mechanics-overview.md` | Concise mechanics summary — quick-reference for the three-input model, flight physics, scoring, Big Bombs | Summary (derives from all above) |
+| `ui-hud-layout.md` | UI/HUD layout spec: screen positions, sizing, and behavior for all alpha-scope HUD elements | Derives from GDD Section 9 |
 | `technical-architecture.md` | Tech stack overview: Gradle multi-module, LibGDX + LibKTX, AmanithSVG, component architecture | Architecture |
 | `suburban-crossroads.json` | Level data: collider geometry, target sensors, spawn lanes, restitution values | Level definition |
 | `backlog.md` | Outstanding work items (checked = done, unchecked = pending) | Task tracking |
@@ -39,7 +40,7 @@ Street Soccer is a **2.5D arcade game** for Android (LibGDX + Kotlin). The playe
 
 - **Edit hierarchy**: When mechanics change, update `game-design-document.md` first, then propagate to technical specs, then to `game-mechanics-overview.md`.
 - **Section cross-references**: Docs reference each other by section number. After adding/removing sections, audit cross-references in all docs.
-- **Tuning constants**: All physics constants live in `physics-and-tuning.md` Section 8 with suggested values and valid ranges. Currently 15 constants.
+- **Tuning constants**: All physics constants live in `physics-and-tuning.md` Section 8 with suggested values and valid ranges. Currently 17 constants.
 - **Commit style**: Imperative mood, 1-2 sentence summary of "why".
 - **No Co-Authored-By**: Never add a Co-Authored-By trailer or any other attribution of AI tools in commit messages. All work in this repository belongs solely to the human author.
 
