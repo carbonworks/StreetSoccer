@@ -111,26 +111,43 @@ Steer input is active **only** during the BALL_IN_FLIGHT state. It applies spin 
 |----------|-------|
 | **Active state** | BALL_IN_FLIGHT only |
 | **Touch zone** | Full screen (no zone restriction) |
-| **Detection method** | Track horizontal displacement between consecutive `touchDragged` events |
-| **Spin direction** | Positive ΔX → rightward spin (ball curves right); Negative ΔX → leftward spin (ball curves left) |
-| **Spin magnitude** | Proportional to horizontal swipe speed: `abs(deltaX) / deltaTime` |
-| **Accumulation** | Each swipe's spin is **added** to the ball's current spin value. Spin is cumulative across multiple swipes. |
-| **Cooldown** | None — the player can swipe continuously or in rapid bursts |
-| **Vertical filtering** | Only the horizontal (X) component of the swipe is used. Vertical movement is ignored to prevent accidental interference. |
+| **Axes** | Both horizontal (X) and vertical (Y) components are used |
+| **Detection method** | Track displacement on both axes between consecutive `touchDragged` events |
+| **Spin direction** | X-axis: positive ΔX → rightward lateral curve, negative ΔX → leftward lateral curve. Y-axis: positive ΔY → deeper into scene (depth curve), negative ΔY → shallower (pulls ball back) |
+| **Spin magnitude** | Proportional to swipe speed on each axis: `sqrt(deltaX² + deltaY²) / deltaTime` — the combined displacement determines overall intensity, then split by axis weight |
+| **Accumulation** | Each swipe's spin is **added** to the ball's current spin values (`spinX`, `spinY`). Spin is cumulative across multiple swipes, subject to the swipe budget. |
+| **Cooldown** | None — the player can swipe continuously or in rapid bursts within the budget |
+| **Swipe budget** | 4 swipes per flight. Swipes 1–2 at full effect (×1.0), 3rd at ~25% effect (×0.25), 4th+ at 0% effect (×0.0). Resets on each new kick. |
+| **Swipe counter** | Increments on each distinct `touchDown` → `touchUp` gesture during BALL_IN_FLIGHT; resets when the state exits (transition to SCORING or IMPACT_MISSED) |
 
 ### Steer Processing
 
 On each `touchDragged` event during BALL_IN_FLIGHT:
 
 ```
-horizontalSpeed = deltaX / deltaTime
-spinDelta = horizontalSpeed * STEER_SENSITIVITY
-ball.spin = ball.spin + spinDelta
+// Compute swipe speed from combined displacement
+swipeSpeed = sqrt(deltaX² + deltaY²) / deltaTime
+
+// Normalize direction into lateral and depth components
+magnitude = sqrt(deltaX² + deltaY²)
+lateralComponent = deltaX / magnitude
+depthComponent   = deltaY / magnitude
+
+// Apply diminishing returns based on swipe count
+diminish = STEER_DIMINISH_CURVE[swipeCount]  // [1.0, 1.0, 0.25, 0.0]
+
+// Compute spin deltas on both axes
+spinDeltaX = lateralComponent * swipeSpeed * STEER_SENSITIVITY * diminish
+spinDeltaY = depthComponent  * swipeSpeed * STEER_SENSITIVITY * diminish
+
+// Accumulate
+ball.spinX += spinDeltaX
+ball.spinY += spinDeltaY
 ```
 
-`STEER_SENSITIVITY` is a tuning constant that controls how responsive steering feels (see `physics-and-tuning.md` Section 7). The accumulated `ball.spin` value feeds into the Magnus force calculation each physics frame.
+`STEER_SENSITIVITY` is a tuning constant that controls how responsive steering feels (see `physics-and-tuning.md` Section 7). `STEER_DIMINISH_CURVE` is an array defining the multiplier for each swipe index (see `physics-and-tuning.md` Section 7). The accumulated `ball.spinX` and `ball.spinY` values feed into the Magnus force calculation each physics frame.
 
-> **Implementation note:** Because steer uses `touchDragged` rather than discrete gesture recognition, the player gets continuous, analog-feeling control. A slow drag produces a gentle curve; a fast flick of the thumb produces a sharp bend.
+> **Implementation note:** Within each swipe gesture (a single `touchDown` → `touchUp` cycle), the player gets continuous, analog-feeling control via `touchDragged` — a slow drag produces a gentle curve; a fast flick of the thumb produces a sharp bend. The diminishing returns apply across discrete swipe gestures (each `touchDown` → `touchUp` cycle increments the swipe counter), creating a strategic budget that rewards decisive steering over spam.
 
 ---
 
@@ -161,7 +178,7 @@ The game state machine (defined in `state-machine.md`) determines which input su
 | **`InputRouter`** | Implements `InputProcessor`. Dispatches touch events to the correct subsystem based on touch zone and game state. Manages pointer-to-subsystem assignment. |
 | **`AngleSliderController`** | Owns the slider `Float` value (0.0–1.0). Processes `touchDown`/`touchDragged`/`touchUp` for the slider pointer. Provides `getCurrentSliderValue()` to the flick system and trajectory preview. |
 | **`FlickDetector`** | Records flick start/end positions and timestamps. Computes power, direction, and packages the `FlickResult`. Enforces the `MIN_FLICK_SPEED` rejection threshold. |
-| **`SteerDetector`** | Tracks horizontal touch movement during BALL_IN_FLIGHT. Computes per-frame spin deltas and applies them to the ball's spin accumulator. Filters out vertical movement. |
+| **`SteerDetector`** | Tracks touch movement on both axes during BALL_IN_FLIGHT. Computes per-frame spin deltas (lateral and depth) and applies them to the ball's spin accumulators (`spinX`, `spinY`). Manages the swipe counter and applies the diminishing-returns multiplier. |
 
 These classes are suggestions — the exact package structure and naming may vary. The key requirement is that each input concern is isolated so it can be tested and tuned independently.
 

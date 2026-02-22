@@ -77,17 +77,21 @@ Once the ball is airborne, the player can swipe across the screen to add **spin*
 
 | Steer Input | Effect |
 |------------|--------|
+| **Horizontal (X) swipe** | Lateral curve — bends the ball left or right |
+| **Vertical (Y) swipe** | Depth curve — swipe up pushes the ball deeper into the scene, swipe down pulls it back |
+| **Swipe speed** | Faster swipes apply more spin; speed is calculated from the combined X and Y displacement over time |
 | **Light swipe** | Gentle curve — fine-tune aim toward a nearby target |
 | **Rapid repeated swipes** | Heavy accumulated spin — hard bend for dramatic corrections |
 | **No swipes** | Ball follows its original flick trajectory unchanged |
 
-Spin is **cumulative** — each additional swipe adds to the existing spin force. Spin **decays over time**, so sustained correction requires repeated input. The ball's trajectory curves proportionally to accumulated spin.
+Spin is **cumulative** and **two-axis** — each swipe adds lateral (X) and depth (Y) spin based on swipe direction and speed. Spin **decays over time**, so sustained correction requires repeated input. However, steering has **diminishing returns**: swipes 1–2 apply at full effect, the 3rd swipe has minimal impact (~25%), and the 4th+ swipe has no effect. The swipe budget resets with each new kick.
 
 #### Skill Depth
 
 - **Short shots** (nearby windows, garage doors) leave little flight time to steer — the initial flick must be precise
 - **Long shots** (Big Bombs down the corridor) give the player several seconds of flight time and multiple steering opportunities
 - **Moving targets** can be tracked mid-flight — flick toward the target's general area, then steer into it as it moves
+- The **4-swipe budget** creates tactical decision-making: players must choose when and how to steer rather than spamming corrections
 - This creates a natural skill gradient: beginners rely on the flick alone, experienced players layer in spin to bend shots around obstacles and into difficult targets
 
 ### Trajectory Preview
@@ -104,6 +108,7 @@ The trajectory preview is a **toggleable setting**, disabled by default. Players
 - **Slider high + fast flick** → Towering Big Bomb arc deep into the corridor
 - **Slider mid + angled flick** → Mid-height arc toward an upper-story window
 - **Flick + steer combo** → Launch toward the corridor, then bend the ball into a window mid-flight
+- **Flick + lateral steer + depth steer** → Launch toward a window, bend around a fence, then push deeper into the scene
 - **Big Bomb threshold** — When kick power exceeds ~90% of maximum **and** the angle slider is set high enough, the ball enters the central corridor (Z-layer 3) for long-distance travel and bonus scoring potential
 
 The intent is **skill-based precision with expressive depth**: the flick is easy to learn, the angle slider adds tactical control, and layering in spin steering rewards practice and mastery.
@@ -117,7 +122,7 @@ Ball flight should feel **physically grounded** — not a rigid simulation, but 
 | **Gravity** | Standard parabolic arc. The ball rises and falls under constant gravitational acceleration. The arc height is determined by the angle slider — slider low produces a flat trajectory, slider high produces a steep lob. |
 | **Time of flight** | Proportional to launch power and angle slider position. A full-power Big Bomb with a high angle should feel like a real long-range kick (~2–3 seconds of hang time), not an instant teleport. A low-angle line drive at the same power arrives quickly. |
 | **Distance** | Correlated with power and angle realistically. A ~45° angle slider setting at max power travels the farthest; steeper or shallower settings cover less ground. |
-| **Spin (Magnus effect)** | Steer swipes apply spin that curves the ball laterally via the Magnus effect. The curve magnitude scales with spin rate and ball speed — spin has more visible effect on fast-moving balls and diminishes as the ball slows. |
+| **Spin (Magnus effect)** | Steer swipes apply spin on two axes — lateral (X) and depth (Y) — via the Magnus effect. Lateral spin curves the ball left/right; depth spin pushes it deeper or pulls it back. The curve magnitude scales with spin rate and ball speed — spin has more visible effect on fast-moving balls and diminishes as the ball slows. |
 | **Spin decay** | Spin bleeds off gradually due to air resistance, not instantly. A single steer swipe produces a smooth, sustained curve that gently straightens out. |
 | **Air resistance (drag)** | Light drag so the ball doesn't fly forever. The ball decelerates slightly over its flight, making distant targets require genuinely powerful flicks. |
 
@@ -332,6 +337,9 @@ Every kick outcome should produce clear, satisfying feedback so the player immed
 | **Steer swipe applied** | Ball rotation speed increases visibly; a curved motion trail appears behind the ball | Subtle whoosh / spin sound on each swipe |
 | **Heavy spin accumulated** | Trail becomes more pronounced and colorful; ball wobbles slightly | Spin sound intensifies in pitch |
 | **Spin decay** | Trail gradually fades back to normal | No audio — silent decay feels natural |
+| **Diminished swipe (3rd)** | Swipe trail renders shorter and faded; a brief muted particle burst indicates reduced effect | Dampened whoosh — noticeably quieter than swipes 1–2 |
+| **Exhausted swipes (4th+)** | No trail change; a subtle "locked" icon or brief gray flash near the ball indicates no effect | No spin sound — silence signals the budget is spent |
+| **Ball shadow** | A dark ellipse rendered on the ground plane directly below the ball; scales with depth (same formula as the ball), opacity fades as the ball rises | No audio — the shadow is a purely visual depth/height cue |
 
 Spin feedback must be immediate and readable so the player sees the connection between their steer swipe and the ball's change in curvature.
 

@@ -30,7 +30,7 @@ In a stationary 2.5D game, the physics engine actually calculates everything on 
 
 ### A. The "Floor" (Ground Zones)
 
-These are areas where the ball's *shadow* can travel freely. If the visual ball's height () drops to  while over these zones, a "bounce" physics event occurs.
+These are areas where the ball's *shadow* is rendered. The shadow is always projected onto the ground plane at the ball's (x, y) position, scaled by the depth formula from Section 3, with opacity decreasing as the ball's height increases (see `physics-and-tuning.md` Section 5). If the visual ball's height drops to zero while over these zones, a "bounce" physics event occurs.
 
 * **The Asphalt:** Covers the center inverted "T" shape (foreground curve, horizontal cross-street, and the deep center road).
 * **The Lawns/Sidewalks:** Flanking the asphalt. Bounces here might have a lower restitution (less bouncy) than the street.

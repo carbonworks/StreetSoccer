@@ -53,12 +53,16 @@ vx = vx * (1 - DRAG * dt)
 vy = vy * (1 - DRAG * dt)
 vz = vz * (1 - DRAG * dt)
 
-// Magnus effect (acts on lateral axis; see Section 3)
-magnusForce = spin * ballSpeed * MAGNUS_COEFFICIENT
-vx = vx + magnusForce * dt
+// Magnus effect — dual-axis (see Section 3)
+ballSpeed = sqrt(vx * vx + vy * vy + vz * vz)
+magnusForceX = spinX * ballSpeed * MAGNUS_COEFFICIENT
+magnusForceY = spinY * ballSpeed * MAGNUS_COEFFICIENT
+vx = vx + magnusForceX * dt
+vy = vy + magnusForceY * dt
 
-// Spin decay
-spin = spin * (1 - SPIN_DECAY * dt)
+// Spin decay (both axes independently)
+spinX = spinX * (1 - SPIN_DECAY * dt)
+spinY = spinY * (1 - SPIN_DECAY * dt)
 
 // Position update
 ball.x = ball.x + vx * dt
@@ -86,28 +90,34 @@ Spin is the core mid-flight mechanic. It transforms a launched ball's straight-l
 
 | Property | Detail |
 |----------|--------|
-| **Data type** | Signed `Float` — positive = rightward curve, negative = leftward curve |
-| **Initial value** | `0.0` at launch (no inherent spin from the flick) |
-| **Accumulation** | Each steer swipe adds `spinDelta` to the current spin value (see `input-system.md` Section 4) |
-| **Decay formula** | `spin = spin * (1 - SPIN_DECAY * dt)` — exponential decay toward zero |
-| **Decay rate** | `SPIN_DECAY` at 2.0/s: spin halves roughly every 0.35 seconds |
+| **Data type** | Two signed `Float` values: `spinX` (lateral) and `spinY` (depth) |
+| **spinX** | Positive = rightward lateral curve, negative = leftward lateral curve |
+| **spinY** | Positive = deeper into scene (depth curve), negative = shallower (pulls ball back) |
+| **Initial value** | Both `0.0` at launch (no inherent spin from the flick) |
+| **Accumulation** | Each steer swipe adds `spinDeltaX` and `spinDeltaY` to the current spin values, subject to the 4-swipe diminishing multiplier (see `input-system.md` Section 4) |
+| **Decay formula** | `spinX = spinX * (1 - SPIN_DECAY * dt)` and `spinY = spinY * (1 - SPIN_DECAY * dt)` — both components decay independently via exponential decay toward zero |
+| **Decay rate** | `SPIN_DECAY` at 2.0/s: each spin component halves roughly every 0.35 seconds |
 
 ### Magnus Force
 
-The Magnus effect produces a lateral force perpendicular to the ball's direction of travel:
+The Magnus effect produces forces on both lateral and depth axes based on the ball's spin components:
 
 ```
 ballSpeed = sqrt(vx^2 + vy^2 + vz^2)
-magnusForce = spin * ballSpeed * MAGNUS_COEFFICIENT
+magnusForceX = spinX * ballSpeed * MAGNUS_COEFFICIENT
+magnusForceY = spinY * ballSpeed * MAGNUS_COEFFICIENT
+vx += magnusForceX * dt
+vy += magnusForceY * dt
 ```
 
-This force is applied to `vx` (the lateral velocity component), curving the ball left or right.
+`magnusForceX` curves the ball left or right (lateral); `magnusForceY` pushes the ball deeper into the scene or pulls it back (depth).
 
 | Behavior | Explanation |
 |----------|-------------|
-| **Fast ball + heavy spin** | Dramatic curve — the Magnus force scales with ball speed, so a powerful kick with accumulated spin produces a visible bend |
+| **Fast ball + heavy lateral spin** | Dramatic lateral curve — the Magnus force scales with ball speed, so a powerful kick with accumulated spin produces a visible bend |
+| **Fast ball + heavy depth spin** | Ball extends or shortens its depth travel — a deep swipe pushes the ball further toward the vanishing point, a pull swipe reins it back |
 | **Slow ball + heavy spin** | Gentle drift — as the ball decelerates, spin has less effect |
-| **Fast ball + no spin** | Straight-line trajectory — no steer input means no lateral force |
+| **Fast ball + no spin** | Straight-line trajectory — no steer input means no lateral or depth force |
 | **Spin without new input** | The existing spin decays over time, producing a curve that gradually straightens out |
 
 > **Tuning note:** `MAGNUS_COEFFICIENT` is the most feel-sensitive constant in the system. Too low and steer swipes feel pointless; too high and the ball becomes uncontrollable. Start at 0.0003 and adjust in small increments (±0.0001).
@@ -134,7 +144,23 @@ At `DRAG = 0.15/s`, the ball retains approximately **86% of its speed after 1 se
 
 ---
 
-## 5. Big Bomb Conditions
+## 5. Ball Shadow
+
+The ball casts a shadow onto the ground plane to help the player gauge both depth (how far) and height (how high) at a glance.
+
+| Property | Detail |
+|----------|--------|
+| **Position** | The ball's (x, y) ground-plane coordinates — i.e., where the ball would be if its height were 0. The shadow stays "stuck" to the ground directly below the ball. |
+| **Scale** | Follows the same depth scaling formula as the ball: `max(0.05, (540 - ball.y) / 540)`. The shadow shrinks as the ball travels deeper into the scene, matching the ball's visual size. |
+| **Opacity** | Inversely proportional to the ball's height above the ground. Full opacity when the ball is at ground level; fades as the ball rises. Suggested formula: `shadowAlpha = max(0.1, 1.0 - ball.height / SHADOW_FADE_HEIGHT)`. The minimum of 0.1 ensures the shadow never fully disappears during flight. |
+| **Shape** | A dark ellipse — simple and readable at all scales. |
+| **Rendering** | Drawn on the ground plane (below the ball sprite in the render order), within the "floor" zones defined in `environment-z-depth-and-collosion.md` Section 2A. |
+
+> **Design note:** The shadow provides two simultaneous readouts: its *position* tells the player where the ball is over the ground (depth), and its *opacity* tells the player how high the ball is. Together, they make mid-flight steering more intuitive — the player can see where a steer correction will land the ball.
+
+---
+
+## 6. Big Bomb Conditions
 
 A Big Bomb occurs when the player delivers a high-power, high-angle kick that sends the ball deep into the central corridor (Z-layer 3). It is the game's peak risk/reward moment.
 
@@ -166,7 +192,7 @@ When both thresholds are met, the ball enters the Big Bomb flight mode:
 
 ---
 
-## 6. Surface Restitution
+## 7. Surface Restitution
 
 When the ball collides with a surface, the bounce intensity is governed by the surface's restitution coefficient. These values are defined in `suburban-crossroads.json` for the base level:
 
@@ -189,9 +215,9 @@ vy_after = vy_before * restitution    // depth energy also reduced
 
 ---
 
-## 7. Tuning Constants Summary
+## 8. Tuning Constants Summary
 
-All physics constants in one table. Start with the suggested values, then tune using the methodology in Section 9.
+All physics constants in one table. Start with the suggested values, then tune using the methodology in Section 10.
 
 | # | Constant | Suggested Value | Valid Range | Affects |
 |---|----------|:-:|:-:|---------|
@@ -208,12 +234,14 @@ All physics constants in one table. Start with the suggested values, then tune u
 | 11 | `BIG_BOMB_POWER_THRESHOLD` | 0.9 | 0.8–0.95 | Minimum power for Big Bomb activation |
 | 12 | `BIG_BOMB_SLIDER_THRESHOLD` | 0.7 | 0.6–0.85 | Minimum slider value for Big Bomb activation |
 | 13 | `FIXED_TIMESTEP` | 1/60 s | 1/30–1/120 | Physics step interval; smaller = more accurate but costlier |
+| 14 | `STEER_DIMINISH_CURVE` | [1.0, 1.0, 0.25, 0.0] | — | Multiplier per swipe index (0-based); swipes beyond index 3 use the last value (0.0) |
+| 15 | `SHADOW_FADE_HEIGHT` | 400 px | 200–600 | Ball height at which the shadow reaches minimum opacity (0.1) |
 
 ---
 
-## 8. Flight Duration Reference
+## 9. Flight Duration Reference
 
-Expected flight times for common shot types, using the suggested constants from Section 7. Use these as sanity checks during tuning — if actual values diverge significantly, investigate which constant is off.
+Expected flight times for common shot types, using the suggested constants from Section 8. Use these as sanity checks during tuning — if actual values diverge significantly, investigate which constant is off.
 
 | Shot Type | Power | Slider | Approx. Launch Angle | Expected Flight Time | Expected Behavior |
 |-----------|:-----:|:------:|:--------------------:|:--------------------:|-------------------|
@@ -227,13 +255,13 @@ Expected flight times for common shot types, using the suggested constants from 
 
 ---
 
-## 9. Tuning Methodology
+## 10. Tuning Methodology
 
 A step-by-step guide for dialing in game feel after initial implementation.
 
 ### Step 1 — Start with defaults
 
-Load all 13 constants from Section 7 at their suggested values. Do not pre-optimize.
+Load all constants from Section 8 at their suggested values. Do not pre-optimize.
 
 ### Step 2 — Enable trajectory preview
 
@@ -241,7 +269,7 @@ Turn on the dotted-arc trajectory preview (GDD Section 3, Trajectory Preview). T
 
 ### Step 3 — Test the five reference shots
 
-Execute each shot from Section 8 and compare actual flight time and landing position against the expected values. Note which shots feel wrong.
+Execute each shot from Section 9 and compare actual flight time and landing position against the expected values. Note which shots feel wrong.
 
 ### Step 4 — Adjust one constant at a time
 
@@ -256,7 +284,7 @@ Change only one constant per test iteration. This isolates cause and effect:
 
 ### Step 5 — Compare against flight duration reference
 
-After each adjustment, re-test the five reference shots. The flight duration table in Section 8 is the primary sanity check — if times fall within the expected ranges and the ball *feels* right, the constants are in a good zone.
+After each adjustment, re-test the five reference shots. The flight duration table in Section 9 is the primary sanity check — if times fall within the expected ranges and the ball *feels* right, the constants are in a good zone.
 
 ### Step 6 — Iterate
 
@@ -268,8 +296,8 @@ Repeat Steps 4–5 until all five reference shots feel satisfying. Then play fre
 
 ## Companion Documents
 
-- **`input-system.md`** — Defines the input pipeline that produces `FlickResult` and spin values consumed by the equations in this document (Sections 2–4 and 6).
+- **`input-system.md`** — Defines the input pipeline that produces `FlickResult` and spin values consumed by the equations in this document (Sections 2–4 and 7).
 - **`environment-z-depth-and-collosion.md`** — Defines the spatial framework (coordinate system, Z-layers, scaling formula) restated in Section 1 of this document.
-- **`suburban-crossroads.json`** — Level data containing collider geometry and restitution values referenced in Sections 1 and 6.
+- **`suburban-crossroads.json`** — Level data containing collider geometry and restitution values referenced in Sections 1 and 7.
 - **`game-design-document.md`** Section 3 — The design intent for "physically grounded" ball flight; this spec implements that intent.
 - **`state-machine.md`** — Defines when physics is active (BALL_IN_FLIGHT state) and transition triggers.
