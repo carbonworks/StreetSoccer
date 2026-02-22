@@ -20,6 +20,7 @@ Street Soccer is a **2.5D arcade game** for Android (LibGDX + Kotlin). The playe
 | `game-mechanics-overview.md` | Concise mechanics summary — quick-reference for the three-input model, flight physics, scoring, Big Bombs | Summary (derives from all above) |
 | `ui-hud-layout.md` | UI/HUD layout spec: screen positions, sizing, and behavior for all alpha-scope HUD elements | Derives from GDD Section 9 |
 | `save-and-persistence.md` | Save system: JSON storage via `Gdx.files.local()`, domain objects, session lifecycle, save triggers, schema versioning, error handling | Derives from GDD Section 7 |
+| `menu-and-navigation-flow.md` | Menu structure, screen flow, and navigation: attract screen, variant selection, pause menu, settings/stats/cosmetics overlays, Android back button, tips integration | Derives from GDD + state-machine.md |
 | `technical-architecture.md` | Tech stack overview: Gradle multi-module, LibGDX + LibKTX, AmanithSVG, component architecture | Architecture |
 | `suburban-crossroads.json` | Level data: collider geometry, target sensors, spawn lanes, restitution values | Level definition |
 | `backlog.md` | Outstanding work items (checked = done, unchecked = pending) | Task tracking |
