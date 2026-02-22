@@ -14,7 +14,7 @@
 
 - [x] UI/HUD Layout Spec — Delivered as `ui-hud-layout.md`: 11-section spec covering session score, streak badge, steer budget meter, angle slider, score popups, pause icon, Big Bomb meteor feedback, trajectory preview, ball shadow, and out-of-scope list
 - [ ] Audio Spec — Master list of all sound effects with asset IDs, format, duration, volume levels, and mixing/priority rules. GDD Section 9 describes ~12 cues by feel ("crisp glass-break", "deep metallic clang", etc.) but no implementable asset definitions exist.
-- [ ] Save & Persistence Spec — Define storage approach (SharedPreferences vs. SQLite), data schema for stats (GDD Section 7), session start/end definition, cosmetic unlock state, and season/variant unlock progress. Currently described only in design terms.
+- [x] Save & Persistence Spec — Delivered as `save-and-persistence.md`: 10-section spec covering JSON storage via `Gdx.files.local()`, domain objects (`ProfileData`, `SettingsData`), session lifecycle, save triggers, schema versioning, and error handling
 - [ ] Menu & Navigation Flow Spec — MAIN_MENU state exists in `state-machine.md` but no spec for: button layout, variant selection screen, settings menu structure (trajectory preview toggle, slider side preference, audio settings), pause menu options, back/exit flow.
 
 ## Documentation — Important, Can Follow First Implementation Pass

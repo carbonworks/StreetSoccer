@@ -146,4 +146,5 @@ A miss (wall hit, ground bounce, or out of bounds) resets the streak to zero. Th
 | `physics-and-tuning.md` | Flight equations, Magnus/drag models, Big Bomb thresholds, restitution, all 17 tuning constants |
 | `state-machine.md` | Game states (BOOT → READY → AIMING → BALL_IN_FLIGHT → SCORING), transitions, and logic constraints |
 | `environment-z-depth-and-collosion.md` | Z-layer architecture, depth scaling formula, collision mapping, spawning coordinates |
+| `save-and-persistence.md` | Save system — JSON storage, domain objects, session lifecycle, save triggers, schema versioning |
 | `suburban-crossroads.json` | Level data — collider geometry, target sensors, spawn lanes, restitution values |
