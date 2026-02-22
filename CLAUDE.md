@@ -40,7 +40,8 @@ Street Soccer is a **2.5D arcade game** for Android (LibGDX + Kotlin). The playe
 - **Edit hierarchy**: When mechanics change, update `game-design-document.md` first, then propagate to technical specs, then to `game-mechanics-overview.md`.
 - **Section cross-references**: Docs reference each other by section number. After adding/removing sections, audit cross-references in all docs.
 - **Tuning constants**: All physics constants live in `physics-and-tuning.md` Section 8 with suggested values and valid ranges. Currently 15 constants.
-- **Commit style**: Imperative mood, 1-2 sentence summary of "why", with `Co-Authored-By` trailer.
+- **Commit style**: Imperative mood, 1-2 sentence summary of "why".
+- **No Co-Authored-By**: Never add a Co-Authored-By trailer or any other attribution of AI tools in commit messages. All work in this repository belongs solely to the human author.
 
 ## Tech Stack (Planned for Implementation)
 
