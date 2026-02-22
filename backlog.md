@@ -13,12 +13,12 @@
 ## Documentation — Needed Before Implementation
 
 - [x] UI/HUD Layout Spec — Delivered as `ui-hud-layout.md`: 11-section spec covering session score, streak badge, steer budget meter, angle slider, score popups, pause icon, Big Bomb meteor feedback, trajectory preview, ball shadow, and out-of-scope list
-- [ ] Audio Spec — Master list of all sound effects with asset IDs, format, duration, volume levels, and mixing/priority rules. GDD Section 9 describes ~12 cues by feel ("crisp glass-break", "deep metallic clang", etc.) but no implementable asset definitions exist.
 - [x] Save & Persistence Spec — Delivered as `save-and-persistence.md`: 10-section spec covering JSON storage via `Gdx.files.local()`, domain objects (`ProfileData`, `SettingsData`), session lifecycle, save triggers, schema versioning, and error handling
 - [x] Menu & Navigation Flow Spec — Delivered as `menu-and-navigation-flow.md`: 11-section spec covering attract screen, variant selection, pause menu, settings/stats/cosmetics overlays, Android back button behavior, state machine integration, and tips integration
 
 ## Documentation — Important, Can Follow First Implementation Pass
 
+- [ ] Audio Spec — Master list of all sound effects with asset IDs, format, duration, volume levels, and mixing/priority rules. GDD Section 9 describes ~12 cues by feel ("crisp glass-break", "deep metallic clang", etc.) but no implementable asset definitions exist. Deferred from pre-implementation — core loop can be built without audio; hooks added later.
 - [ ] Asset Registry — Starter version listing all known and planned assets: sprites (ball skins, impact effects, trail effects), sounds (from Audio Spec), particle effects (glass-shatter, confetti, sparks, smoke, splinters), background images, and level JSONs. Include asset IDs, source tool (Recraft/Claude SVG), and style notes.
 - [ ] Cosmetic & Unlock System Spec — Implementation details for ball skins, impact effects, and trail effects (GDD Section 7): selection UI, preview before unlock, unlock threshold calculations (score milestones, streak achievements, distance milestones), runtime application to ball rendering.
 - [ ] Seasonal Variant Templates — JSON files or schema extensions for the 5 planned variants (Summer Block Party, Halloween, Winter Holidays, Rainy Day, Garage Sale). GDD Section 6 describes thematic changes but no level data or target/spawn-lane modifications are defined.
