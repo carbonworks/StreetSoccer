@@ -1,0 +1,102 @@
+{
+  "level_meta": {
+    "id": "suburban_crossroads_01",
+    "background_image": "background.jpg",
+    "base_resolution": { "width": 1920, "height": 1080 },
+    "horizon_y": 540,
+    "player_origin": { "x": 960, "y": 0 }
+  },
+  
+  "static_colliders": [
+    {
+      "id": "left_house_facade",
+      "type": "rect",
+      "x": 40, "y": 250, "width": 480, "height": 600,
+      "z_layer": 2,
+      "restitution": 0.2,
+      "description": "Blocks balls from traveling infinitely on the left side."
+    },
+    {
+      "id": "right_house_facade",
+      "type": "rect",
+      "x": 1120, "y": 280, "width": 700, "height": 600,
+      "z_layer": 2,
+      "restitution": 0.2,
+      "description": "Blocks balls from traveling infinitely on the right side."
+    },
+    {
+      "id": "left_fence",
+      "type": "rect",
+      "x": 0, "y": 240, "width": 520, "height": 80,
+      "z_layer": 1,
+      "restitution": 0.4,
+      "description": "Low obstacle. Ball can travel over if Y_visual > 80 at collision."
+    },
+    {
+      "id": "right_fence",
+      "type": "rect",
+      "x": 1120, "y": 260, "width": 800, "height": 80,
+      "z_layer": 1,
+      "restitution": 0.4
+    }
+  ],
+
+  "target_sensors": [
+    {
+      "id": "left_window_upper_1",
+      "type": "window_glass",
+      "x": 240, "y": 640, "width": 50, "height": 70,
+      "points": 250,
+      "z_layer": 2
+    },
+    {
+      "id": "left_window_upper_2",
+      "type": "window_glass",
+      "x": 320, "y": 640, "width": 50, "height": 70,
+      "points": 250,
+      "z_layer": 2
+    },
+    {
+      "id": "right_window_upper_1",
+      "type": "window_glass",
+      "x": 1350, "y": 660, "width": 50, "height": 70,
+      "points": 250,
+      "z_layer": 2
+    },
+    {
+      "id": "right_garage_door",
+      "type": "door_metal",
+      "x": 1150, "y": 300, "width": 120, "height": 100,
+      "points": 100,
+      "z_layer": 2
+    }
+  ],
+
+  "spawn_lanes": [
+    {
+      "id": "cross_street_traffic",
+      "target_type": "vehicle",
+      "start_x": -100, "start_y": 200,
+      "end_x": 2020, "end_y": 200,
+      "z_layer": 1,
+      "speed_range": [100, 250]
+    },
+    {
+      "id": "deep_alley_approach",
+      "target_type": "runner",
+      "start_x": 960, "start_y": 500,
+      "end_x": 960, "end_y": 0,
+      "z_layer": 3,
+      "speed_range": [50, 80],
+      "description": "Targets spawn in the distance and run toward the camera, scaling up."
+    },
+    {
+      "id": "sky_drone_path",
+      "target_type": "drone",
+      "start_x": -100, "start_y": 850,
+      "end_x": 2020, "end_y": 800,
+      "z_layer": 4,
+      "speed_range": [80, 150]
+    }
+  ]
+}
