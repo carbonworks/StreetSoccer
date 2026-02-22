@@ -1,4 +1,6 @@
-**This document defines the menu structure, screen flow, and navigation behavior for Street Soccer.** It covers every screen and overlay the player interacts with outside of active gameplay: the main menu (attract screen), variant selection, pause menu, settings, stats, cosmetics, and tips. For the in-gameplay HUD, see `ui-hud-layout.md`. For the game states that host these menus, see `state-machine.md`.
+**This document defines the menu structure, screen flow, and navigation behavior for Street Soccer.** It covers every screen and overlay the player interacts with outside of active gameplay: the main menu (attract screen), pause menu, settings, and stats. For the in-gameplay HUD, see `ui-hud-layout.md`. For the game states that host these menus, see `state-machine.md`.
+
+> **Alpha vs. Post-Alpha:** Sections marked **(Post-Alpha)** are fully designed but deferred from the alpha build. They remain in this spec as the design target for future implementation. All other sections describe the alpha-scope menu surface.
 
 ---
 
@@ -23,17 +25,14 @@ All navigation follows a **flat, arcade-style structure** — at most two taps f
 │  ┌────────────────────────────────────────────────────┐  │
 │  │           ATTRACT SCREEN (base layer)              │  │
 │  │                                                    │  │
-│  │   ┌──────────────┐                                 │  │
-│  │   │ Variant Badge │──→ Variant Select Overlay      │  │
-│  │   └──────────────┘                                 │  │
 │  │       TAP TO PLAY ──→ READY (gameplay begins)      │  │
 │  │                                                    │  │
-│  │   [Stats]  [Settings]  [Cosmetics]                 │  │
-│  │      │         │            │                      │  │
-│  └──────┼─────────┼────────────┼──────────────────────┘  │
-│         ▼         ▼            ▼                         │
-│   Stats Overlay  Settings   Cosmetics                    │
-│   (read-only)    Overlay    Overlay                      │
+│  │   [Stats]  [Settings]                              │  │
+│  │      │         │                                   │  │
+│  └──────┼─────────┼──────────────────────────────────-┘  │
+│         ▼         ▼                                      │
+│   Stats Overlay  Settings                                │
+│   (read-only)    Overlay                                 │
 │                                                          │
 │   ← Only ONE overlay active at a time →                  │
 └──────────────────────────────────────────────────────────┘
@@ -57,18 +56,16 @@ All navigation follows a **flat, arcade-style structure** — at most two taps f
 │   │                                                    │ │
 │   │   RESUME  ──→ return to pre-pause gameplay state   │ │
 │   │   SETTINGS ──→ Settings Overlay                    │ │
-│   │   TIPS ──→ Tips Panel                              │ │
 │   │   QUIT ──→ MAIN_MENU (session end + save)          │ │
 │   └────────────────────────────────────────────────────┘ │
 │                                                          │
-│   ← Only ONE overlay active at a time →                  │
 └──────────────────────────────────────────────────────────┘
 ```
 
 ### Design Principles
 
 - **Two-tap maximum**: Any function is reachable in at most 2 taps from wherever the player is.
-- **Overlays, not screens**: Secondary panels (stats, settings, cosmetics, variant select, tips) are overlays within their parent state — they do not trigger game state transitions.
+- **Overlays, not screens**: Secondary panels (stats, settings) are overlays within their parent state — they do not trigger game state transitions.
 - **One overlay at a time**: Opening an overlay closes any currently open overlay. No stacking.
 - **Arcade minimal**: Icons over text, bold options, fast transitions. Get into gameplay fast.
 
@@ -88,10 +85,6 @@ The main menu is an **arcade attract screen** — a bold, inviting entry point t
 │                    (game title)                   │
 │                                                  │
 │                                                  │
-│            ┌─────────────────────────┐            │
-│            │  ☆ Suburban Crossroads  │            │
-│            │    (variant badge)      │            │
-│            └─────────────────────────┘            │
 │                                                  │
 │            ╔═════════════════════════╗            │
 │            ║     TAP  TO  PLAY      ║            │
@@ -100,8 +93,8 @@ The main menu is an **arcade attract screen** — a bold, inviting entry point t
 │                                                  │
 │                                                  │
 │                                                  │
-│         [🏆]          [⚙]          [🎨]          │
-│         Stats       Settings     Cosmetics       │
+│              [🏆]          [⚙]                    │
+│              Stats       Settings                │
 │                  (icons only)                     │
 └──────────────────────────────────────────────────┘
 ```
@@ -111,23 +104,24 @@ The main menu is an **arcade attract screen** — a bold, inviting entry point t
 | Element | Position | Behavior |
 |---------|----------|----------|
 | **Game title** | Top-center, ~15% from top edge | Static. Large, bold, arcade-style font. |
-| **Variant badge** | Center, above TAP TO PLAY | Displays the selected variant name (e.g., "Suburban Crossroads"). Tap opens the Variant Selection Overlay (Section 3). Styled as a rounded pill/badge. |
 | **TAP TO PLAY** | Center of screen | The dominant interactive element. Pulsing glow animation (scale oscillates ~95%–105%, opacity breathes between 80%–100%) on a ~2 s cycle. Tap transitions to READY state. |
-| **Bottom icon bar** | Bottom edge, horizontally centered, ~48 px from bottom | Three evenly spaced icon buttons (~64×64 px touch targets). No text labels — icons only. Left: trophy icon (Stats). Center: gear icon (Settings). Right: palette icon (Cosmetics). |
+| **Bottom icon bar** | Bottom edge, horizontally centered, ~48 px from bottom | Two evenly spaced icon buttons (~64×64 px touch targets). No text labels — icons only. Left: trophy icon (Stats). Right: gear icon (Settings). |
 
 ### Background
 
-The full-screen level background (`background.jpg` or the selected variant's background) renders behind all menu elements, establishing the game's visual identity immediately.
+The full-screen level background (`background.jpg`) renders behind all menu elements, establishing the game's visual identity immediately.
 
 ### First-Launch Behavior
 
-On first launch (no `profile.json` exists), the attract screen appears identically — there is no separate onboarding flow. The Tips system (Section 10) handles feature discovery contextually.
+On first launch (no `profile.json` exists), the attract screen appears identically — there is no separate onboarding flow.
 
 ---
 
-## 3. Variant Selection Overlay
+## 3. Variant Selection Overlay (Post-Alpha)
 
-Accessible from the **variant badge** on the main menu attract screen. Not accessible from the pause menu.
+> **Deferred.** Only one variant (`suburban_crossroads`) exists in the alpha build. This overlay and the attract-screen variant badge will be implemented when a second variant ships. The design is retained here as the target for that milestone.
+
+Accessible from a **variant badge** on the main menu attract screen (badge not shown in alpha). Not accessible from the pause menu.
 
 ### Layout
 
@@ -162,6 +156,12 @@ A horizontal carousel of variant cards, centered vertically on screen over a sem
 | **Close** | X button (top-right) or Android back button. |
 | **Data source** | Unlocked variants come from `ProfileData.variants.unlockedVariants`. Default: `suburban_crossroads` only. |
 
+### Alpha-to-Post-Alpha Additions
+
+When this section is implemented, the attract screen (Section 2) gains:
+- A **variant badge** between the title and TAP TO PLAY, displaying the selected variant name. Tap opens this overlay.
+- The bottom icon bar layout may be adjusted to accommodate the badge visually.
+
 ---
 
 ## 4. Pause Menu
@@ -170,7 +170,7 @@ Triggered during active gameplay by the **pause icon** (top-left, 64×64 px — 
 
 ### Layout
 
-A semi-transparent overlay dims the frozen game scene. Four large, vertically stacked buttons dominate the center.
+A semi-transparent overlay dims the frozen game scene. Three large, vertically stacked buttons dominate the center.
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -182,10 +182,6 @@ A semi-transparent overlay dims the frozen game scene. Four large, vertically st
 │          ├──────────────────────────┤            │
 │          │                          │            │
 │          │      S E T T I N G S     │            │
-│          │                          │            │
-│          ├──────────────────────────┤            │
-│          │                          │            │
-│          │         T I P S          │            │
 │          │                          │            │
 │          ├──────────────────────────┤            │
 │          │                          │            │
@@ -203,7 +199,6 @@ A semi-transparent overlay dims the frozen game scene. Four large, vertically st
 |--------|--------|
 | **RESUME** | Returns to the pre-pause gameplay state. Unpauses physics, restores HUD. |
 | **SETTINGS** | Opens the Settings Overlay (Section 5) on top of the pause menu. |
-| **TIPS** | Opens the Tips Panel (Section 10) showing the current rotating tip. |
 | **QUIT** | Returns to MAIN_MENU immediately. Triggers session end: session stats are merged into `CareerStats` and `profile.json` is written (see `save-and-persistence.md` Section 5). **No confirmation dialog** — arcade games don't ask "are you sure?" when you walk away. |
 
 ### Style
@@ -220,7 +215,7 @@ Accessible from **two entry points**: the gear icon on the main menu bottom bar,
 
 ### Layout
 
-A centered panel over a semi-transparent dimmed background. Contains all user-configurable settings from `SettingsData` (see `save-and-persistence.md` Section 3).
+A centered panel over a semi-transparent dimmed background. Contains the alpha-scope settings from `SettingsData` (see `save-and-persistence.md` Section 3).
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -232,9 +227,6 @@ A centered panel over a semi-transparent dimmed background. Contains all user-co
 │          │                          │            │
 │          │  Trajectory Preview      │            │
 │          │              [OFF | on ] │            │
-│          │                          │            │
-│          │  Slider Side             │            │
-│          │              [LEFT | right] │          │
 │          │                          │            │
 │          │  Master Volume           │            │
 │          │     ●━━━━━━━━━━━━━━━━━━  │            │
@@ -252,7 +244,6 @@ A centered panel over a semi-transparent dimmed background. Contains all user-co
 | Setting | Control Type | Maps To |
 |---------|-------------|---------|
 | **Trajectory Preview** | Toggle switch (on/off) | `SettingsData.trajectoryPreviewEnabled` |
-| **Slider Side** | Toggle switch (left/right) | `SettingsData.sliderSide` |
 | **Master Volume** | Horizontal slider (0.0–1.0) | `SettingsData.masterVolume` |
 | **SFX Volume** | Horizontal slider (0.0–1.0) | `SettingsData.sfxVolume` |
 
@@ -262,7 +253,10 @@ A centered panel over a semi-transparent dimmed background. Contains all user-co
 |--------|--------|
 | **Save behavior** | Changes save immediately to `settings.json` on each value change (see `save-and-persistence.md` Section 6). No "Apply" or "Save" button needed. |
 | **Close** | X button (top-right) or Android back button. Returns to the previous context (attract screen or pause menu). |
-| **Slider Side note** | The data model for `sliderSide` exists in `SettingsData`. `ui-hud-layout.md` Section 11 defers the handedness configuration UI to beta, but since the underlying data field exists, this spec includes the toggle for completeness. Implementations may hide this toggle behind a feature flag until the mirroring logic is built. |
+
+### Post-Alpha Addition: Slider Side
+
+The `SettingsData.sliderSide` field exists in the data model but the **Slider Side toggle is deferred to post-alpha**, alongside the handedness mirroring logic (see `ui-hud-layout.md` Section 11). When implemented, a left/right toggle will be added to this panel.
 
 ---
 
@@ -324,9 +318,11 @@ A centered panel displaying all `CareerStats` fields (see `save-and-persistence.
 
 ---
 
-## 7. Cosmetics Overlay
+## 7. Cosmetics Overlay (Post-Alpha)
 
-Accessible from the **palette icon** on the main menu bottom bar.
+> **Deferred.** The alpha build ships with one item per cosmetic category (`classic_white` ball, `default_shatter` impact, `none` trail). This overlay will be implemented alongside the Cosmetic & Unlock System Spec (see `backlog.md`), when multiple items per category exist. The design is retained here as the target.
+
+Accessible from a **palette icon** on the main menu bottom bar (icon not shown in alpha).
 
 ### Layout
 
@@ -363,6 +359,10 @@ A panel with three horizontal sections (or tabs), one for each cosmetic category
 | **Close** | X button (top-right) or Android back button. |
 | **Data source** | Unlocked/selected state from `ProfileData.cosmetics`. Unlock thresholds and progression logic are defined by the future Cosmetic & Unlock System Spec (see `backlog.md`). |
 
+### Alpha-to-Post-Alpha Additions
+
+When this section is implemented, the attract screen (Section 2) gains a **palette icon** in the bottom icon bar (expanding from 2 to 3 icons).
+
 ---
 
 ## 8. Android Back Button Behavior
@@ -371,7 +371,7 @@ The Android back button follows a consistent **"go up one level"** pattern throu
 
 | Context | Back Button Action |
 |---------|-------------------|
-| **Overlay open** (any: variant select, stats, settings, cosmetics, tips) | Close the overlay. Return to the underlying screen (attract screen or pause menu). |
+| **Overlay open** (stats, settings) | Close the overlay. Return to the underlying screen (attract screen or pause menu). |
 | **Pause menu** (no overlay) | Same as tapping RESUME — return to the pre-pause gameplay state. |
 | **Main menu attract screen** (no overlay) | Show an exit confirmation prompt: **"LEAVE?"** with **YES** / **NO** buttons. YES exits the app; NO dismisses the prompt. |
 | **Active gameplay** (READY, AIMING, BALL_IN_FLIGHT, SCORING, IMPACT_MISSED) | Transition to PAUSED state (same as tapping the pause icon). |
@@ -379,6 +379,10 @@ The Android back button follows a consistent **"go up one level"** pattern throu
 ### Why the Exit Confirmation
 
 This is the **only confirmation dialog** in the entire navigation flow. It exists because Android users expect the back button to be non-destructive — accidentally closing the app would lose the player's sense of where they were. Every other navigation action (including QUIT from the pause menu) is instant and confirmation-free, staying true to the arcade ethos.
+
+### Post-Alpha Back Button Contexts
+
+When deferred overlays are implemented (variant select, cosmetics, tips), the back button closes them identically to the alpha overlays — no new behavior, just more contexts in the table above.
 
 ---
 
@@ -390,8 +394,8 @@ All menus and overlays map to **existing game states** defined in `state-machine
 
 | Game State | UI Layer | Managed Overlays |
 |------------|----------|-----------------|
-| **MAIN_MENU** | Attract screen (Section 2) | Variant Select, Stats, Settings, Cosmetics — at most one active |
-| **PAUSED** | Pause menu (Section 4) | Settings, Tips — at most one active |
+| **MAIN_MENU** | Attract screen (Section 2) | Stats, Settings — at most one active |
+| **PAUSED** | Pause menu (Section 4) | Settings only |
 | **READY / AIMING / BALL_IN_FLIGHT / SCORING / IMPACT_MISSED** | Gameplay HUD (see `ui-hud-layout.md`) | None — pause icon is the only menu entry point |
 
 ### Menu-Driven State Transitions
@@ -411,22 +415,31 @@ These transitions happen **within** a game state — they do not change the FSM 
 |---------------|--------|--------|
 | MAIN_MENU | Tap Stats icon | Open Stats Overlay |
 | MAIN_MENU | Tap Settings icon | Open Settings Overlay |
-| MAIN_MENU | Tap Cosmetics icon | Open Cosmetics Overlay |
-| MAIN_MENU | Tap Variant badge | Open Variant Select Overlay |
 | MAIN_MENU | Close any overlay (X or back) | Return to attract screen |
 | PAUSED | Tap SETTINGS | Open Settings Overlay |
+| PAUSED | Close overlay (X or back) | Return to pause menu |
+
+### Post-Alpha Overlay Additions
+
+When deferred sections are implemented, overlay transitions are added — no state machine changes needed:
+
+| Current State | Action | Result |
+|---------------|--------|--------|
+| MAIN_MENU | Tap Variant badge | Open Variant Select Overlay |
+| MAIN_MENU | Tap Cosmetics icon | Open Cosmetics Overlay |
 | PAUSED | Tap TIPS | Open Tips Panel |
-| PAUSED | Close any overlay (X or back) | Return to pause menu |
 
 ---
 
-## 10. Tips Integration
+## 10. Tips Integration (Post-Alpha)
+
+> **Deferred.** The tips system requires trigger evaluation logic (tracking consecutive misses, kick counts, steer usage), rotation state, dismiss persistence, and the toast display system. This will be implemented alongside the Tips System Spec (see `backlog.md`). The design is retained here as the target.
 
 Tips surface in two places, following the design intent in `game-design-document.md` Section 10.
 
 ### Pause Menu — Tips Panel
 
-Accessible via the **TIPS** button in the pause menu.
+Accessible via a **TIPS** button in the pause menu (button not shown in alpha — see Section 4).
 
 | Aspect | Detail |
 |--------|--------|
@@ -455,6 +468,12 @@ These are the four starter tips defined in `game-design-document.md` Section 10:
 | 3 | "Hit targets in a row to build a **streak multiplier** — up to ×3!" | After the player's first streak of 2+ |
 | 4 | "Aim a powerful flick straight up to send a **Big Bomb** down the central corridor for bonus points." | After 20 kicks with no Big Bomb attempt |
 
+### Alpha-to-Post-Alpha Additions
+
+When this section is implemented:
+- The pause menu (Section 4) gains a **TIPS** button between SETTINGS and QUIT (expanding from 3 to 4 buttons).
+- The attract screen gains contextual tip toasts near the bottom edge.
+
 ---
 
 ## 11. Out of Scope
@@ -467,7 +486,7 @@ The following features are explicitly **not part of this spec**. They are listed
 | **Friend/share functionality** | Social features are not in the alpha scope. |
 | **Account/login** | No user accounts — all data is local (see `save-and-persistence.md`). |
 | **In-app purchase UI** | No monetization in the alpha build. |
-| **Tutorial/onboarding flow** | The Tips system (Section 10) handles feature discovery. No dedicated tutorial. |
+| **Tutorial/onboarding flow** | The Tips system (Section 10, post-alpha) will handle feature discovery. No dedicated tutorial. |
 | **Accessibility options** | Font sizing, colorblind modes, and screen reader support are future work (see `backlog.md`). |
 | **Challenge mode select** | Challenge mode is a future consideration (GDD Section 11). No mode selection UI needed yet. |
 | **Notification/inbox UI** | No notification system exists. |
@@ -479,9 +498,10 @@ The following features are explicitly **not part of this spec**. They are listed
 | Document | Relevance |
 |----------|-----------|
 | `game-design-document.md` Section 7 | Progression, stats, and cosmetic unlock concepts surfaced by menu screens |
-| `game-design-document.md` Section 10 | Tips system design — tip content, triggers, and dismissal behavior |
+| `game-design-document.md` Section 10 | Tips system design — tip content, triggers, and dismissal behavior (post-alpha) |
 | `state-machine.md` | Game states (MAIN_MENU, PAUSED) that host the menu and overlay layers |
 | `save-and-persistence.md` Section 3 | Domain objects (`ProfileData`, `SettingsData`, `CareerStats`, `CosmeticState`, `VariantState`) displayed and modified by menu screens |
 | `save-and-persistence.md` Section 6 | Save triggers for settings changes, cosmetic selections, and session end |
 | `ui-hud-layout.md` | In-gameplay HUD layout — complements this spec's menu/overlay coverage |
 | `ui-hud-layout.md` Section 7 | Pause icon definition (position, size, touch target) |
+| `ui-hud-layout.md` Section 11 | Handedness configuration — deferred alongside Slider Side toggle |
