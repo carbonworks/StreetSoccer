@@ -51,10 +51,10 @@ This diagram outlines the primary flow of the user experience.
 
 ### E. `AIMING` (Input Handling)
 
-* **Purpose:** Player is dragging to determine power and angle.
-* **Entry Actions:** Calculate `v_initial` based on drag distance.
-* **Updates:** * Update `TrajectoryRenderer.kt` to draw the dotted arc.
-* Check for "Big Bomb" threshold (if power > 90%).
+* **Purpose:** Player is dragging to determine power and horizontal aim. The angle slider (always visible on a side rail) sets the launch angle independently via multi-touch.
+* **Entry Actions:** Calculate `v_initial` based on drag distance; read angle slider value for launch angle.
+* **Updates:** * Update `TrajectoryRenderer.kt` to draw the dotted arc (incorporating angle slider position).
+* Check for "Big Bomb" threshold (if power > 90% and angle slider is high).
 
 
 * **Transitions:**
@@ -71,6 +71,7 @@ This diagram outlines the primary flow of the user experience.
 * Calculate  (height) and  based on the **Z-Depth Formulas** in the Technical Spec.
 * Apply Z-Ordering: Ball moves behind/in front of buildings based on shadow Y.
 
+> **Mid-flight steering:** This state now accepts touch input. Swipe gestures detected during `BALL_IN_FLIGHT` apply a spin force to the ball, curving its trajectory. Each swipe adds cumulative spin; spin decays over time. The state does **not** transition on steer input — the ball remains in flight while spin is applied.
 
 * **Transitions:**
 * To `SCORING` if collision with `target_sensor` occurs.
@@ -93,6 +94,7 @@ This diagram outlines the primary flow of the user experience.
 | --- | --- | --- | --- |
 | `READY` | `Input.touchDown()` | `AIMING` | Only if `shotCount > 0` |
 | `AIMING` | `Input.touchUp()` | `BALL_IN_FLIGHT` | Apply `Impulse` to Box2D body |
+| `BALL_IN_FLIGHT` | `Input.swipe()` | `BALL_IN_FLIGHT` | Apply spin force to ball; remain in flight |
 | `BALL_IN_FLIGHT` | `ContactListener.beginContact()` | `SCORING` | Only if `fixture.isSensor == true` |
 | `BALL_IN_FLIGHT` | `Ball.isOutOfBounds()` | `READY` | Reset ball to player origin |
 | `ANY` | `EscapeKey` | `PAUSED` | Pause Box2D `world.step()` |

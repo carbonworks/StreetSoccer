@@ -25,12 +25,12 @@ This is the authoritative design reference for Street Soccer. It describes **wha
 The moment-to-moment cycle is deliberately tight:
 
 ```
-AIM  →  KICK  →  WATCH  →  SCORE  →  REPEAT
+AIM  →  KICK  →  STEER  →  SCORE  →  RESET
 ```
 
-1. **Aim** — The player touches the screen and drags; a dotted trajectory arc previews the ball's flight path in real time.
-2. **Kick** — The player lifts their finger. Power and direction are locked in from the gesture.
-3. **Watch** — The ball flies into the scene, shrinking as it travels deeper. The player tracks it visually.
+1. **Aim** — The player sets the angle slider for their desired launch arc, then touches the screen to begin a flick gesture.
+2. **Kick** — The player releases the flick. Swipe speed and length set power; swipe direction sets the initial trajectory. The ball launches.
+3. **Steer** — While the ball is in flight, the player swipes to add spin. Each swipe curves the ball's path, allowing mid-flight corrections. Longer flights (Big Bombs) give more time to steer; short shots demand a precise initial flick.
 4. **Score** — The ball strikes a target (or misses). Points appear, combo state updates, and feedback plays.
 5. **Reset** — The ball disappears and instantly resets to the launch zone. Only one ball is in flight at a time. Moving targets continue cycling. The player aims again.
 
@@ -42,28 +42,86 @@ There is **no lives system**, **no timer**, and **no shot limit**. The player ki
 
 ## 3. Controls & Kick Mechanics
 
-### Single Unified Swipe
+### Flick + Steer
 
-All kicks use the same input gesture — a single swipe that determines both **direction** and **power** simultaneously.
+Kicking uses three inputs: an **angle slider** to set launch angle, a **flick** to launch, then optional **steer** swipes during flight.
 
-| Gesture Property | Game Effect |
-|-----------------|-------------|
-| **Swipe direction** | Determines the horizontal angle and depth trajectory of the ball |
-| **Swipe length / speed** | Determines kick power (longer/faster = more force) |
+#### Angle Slider
 
-There are no separate kick types or mode switches. The player's skill comes from reading the field and executing the right swipe to reach their intended target.
+A vertical slider on the screen's side rail (left or right edge) controls the ball's **launch angle from the ground** — from a low line drive at the bottom to a high lob at the top.
+
+| Property | Detail |
+|----------|--------|
+| **Position** | Vertical rail along one screen edge, always visible during READY and AIMING states |
+| **Range** | Low (near-flat trajectory) to high (steep arc) |
+| **Default** | Mid-range — a moderate arc suitable for mid-field targets |
+| **Multi-touch** | The slider supports simultaneous input — the player can adjust the angle with one thumb while flicking with the other |
+
+The slider decouples launch angle from power. This means a fast, powerful flick can produce either a screaming line drive (slider low) or a towering Big Bomb arc (slider high). Without the slider, power and angle would be entangled in a single gesture, limiting expressiveness.
+
+#### Phase 1 — Flick (Launch)
+
+The player touches the screen, drags, and releases. The flick determines horizontal aim and power; the angle slider (set before or during the flick) determines the vertical arc:
+
+| Input | Game Effect |
+|-------|-------------|
+| **Flick direction (left/right)** | Determines the horizontal aim — where the ball goes laterally |
+| **Flick speed / length** | Determines kick power (longer/faster = more force) |
+| **Angle slider position** | Determines launch angle from the ground (low line drive ↔ high lob) |
+
+There are no separate kick types or mode switches. The flick is intuitive, and the angle slider adds precision without complexity — new players can ignore it and use the default angle.
+
+#### Phase 2 — Steer (Mid-Flight Spin)
+
+Once the ball is airborne, the player can swipe across the screen to add **spin** to the ball. Each swipe applies a spin force that curves the ball's trajectory:
+
+| Steer Input | Effect |
+|------------|--------|
+| **Light swipe** | Gentle curve — fine-tune aim toward a nearby target |
+| **Rapid repeated swipes** | Heavy accumulated spin — hard bend for dramatic corrections |
+| **No swipes** | Ball follows its original flick trajectory unchanged |
+
+Spin is **cumulative** — each additional swipe adds to the existing spin force. Spin **decays over time**, so sustained correction requires repeated input. The ball's trajectory curves proportionally to accumulated spin.
+
+#### Skill Depth
+
+- **Short shots** (nearby windows, garage doors) leave little flight time to steer — the initial flick must be precise
+- **Long shots** (Big Bombs down the corridor) give the player several seconds of flight time and multiple steering opportunities
+- **Moving targets** can be tracked mid-flight — flick toward the target's general area, then steer into it as it moves
+- This creates a natural skill gradient: beginners rely on the flick alone, experienced players layer in spin to bend shots around obstacles and into difficult targets
 
 ### Trajectory Preview
 
-While the player drags, a **dotted arc** renders in real time showing the predicted flight path. This preview is essential to the "skill-based precision" feel — the player sees exactly where the ball will go before committing. The arc updates every frame during the AIMING state.
+A **dotted arc** shows the ball's predicted flight path. During the AIMING state, it previews the flick trajectory. During BALL_IN_FLIGHT, it dynamically updates to reflect accumulated spin, showing the curved path ahead.
+
+The trajectory preview is a **toggleable setting**, disabled by default. Players who want the extra visual aid can enable it in Settings. This keeps the default experience clean while giving newer players an optional training tool.
+
+> **Tip discovery:** The Tips system (Section 10) surfaces the trajectory preview setting to help players find it.
 
 ### Kick Feel
 
-- **Low power, angled swipe** → Short arc toward a nearby window or building target
-- **High power, upward swipe** → The ball launches deep into the scene, shrinking rapidly — the "Big Bomb"
-- **Big Bomb threshold** — When kick power exceeds ~90% of maximum, the ball enters the central corridor (Z-layer 3) for long-distance travel and bonus scoring potential
+- **Slider low + fast flick** → Screaming line drive at a garage door or cross-street vehicle
+- **Slider high + fast flick** → Towering Big Bomb arc deep into the corridor
+- **Slider mid + angled flick** → Mid-height arc toward an upper-story window
+- **Flick + steer combo** → Launch toward the corridor, then bend the ball into a window mid-flight
+- **Big Bomb threshold** — When kick power exceeds ~90% of maximum **and** the angle slider is set high enough, the ball enters the central corridor (Z-layer 3) for long-distance travel and bonus scoring potential
 
-The intent is **skill-based precision**: the player must learn how swipe gestures map to ball trajectories and improve over time. Easy to pick up, difficult to master.
+The intent is **skill-based precision with expressive depth**: the flick is easy to learn, the angle slider adds tactical control, and layering in spin steering rewards practice and mastery.
+
+### Ball Flight Physics
+
+Ball flight should feel **physically grounded** — not a rigid simulation, but close enough that a player's real-world intuition about kicking a ball transfers into the game.
+
+| Property | Model |
+|----------|-------|
+| **Gravity** | Standard parabolic arc. The ball rises and falls under constant gravitational acceleration. The arc height is determined by the angle slider — slider low produces a flat trajectory, slider high produces a steep lob. |
+| **Time of flight** | Proportional to launch power and angle slider position. A full-power Big Bomb with a high angle should feel like a real long-range kick (~2–3 seconds of hang time), not an instant teleport. A low-angle line drive at the same power arrives quickly. |
+| **Distance** | Correlated with power and angle realistically. A ~45° angle slider setting at max power travels the farthest; steeper or shallower settings cover less ground. |
+| **Spin (Magnus effect)** | Steer swipes apply spin that curves the ball laterally via the Magnus effect. The curve magnitude scales with spin rate and ball speed — spin has more visible effect on fast-moving balls and diminishes as the ball slows. |
+| **Spin decay** | Spin bleeds off gradually due to air resistance, not instantly. A single steer swipe produces a smooth, sustained curve that gently straightens out. |
+| **Air resistance (drag)** | Light drag so the ball doesn't fly forever. The ball decelerates slightly over its flight, making distant targets require genuinely powerful flicks. |
+
+> **Tuning note:** "Realistic" means the physics *feel* correct to a player, not that they pass a physics exam. Values should be tuned for game feel — e.g., gravity may be slightly stronger than 9.8 m/s² to keep rallies snappy, and Magnus effect may be amplified so spin steering feels responsive. The goal is *plausible*, not *simulation-accurate*.
 
 ---
 
@@ -267,13 +325,48 @@ Every kick outcome should produce clear, satisfying feedback so the player immed
 | 5+ hits | Streak counter pulses, escalating chime pitch |
 | Streak broken | Multiplier badge dims with a deflation sound |
 
+### Spin & Steer Feedback
+
+| Event | Visual | Audio |
+|-------|--------|-------|
+| **Steer swipe applied** | Ball rotation speed increases visibly; a curved motion trail appears behind the ball | Subtle whoosh / spin sound on each swipe |
+| **Heavy spin accumulated** | Trail becomes more pronounced and colorful; ball wobbles slightly | Spin sound intensifies in pitch |
+| **Spin decay** | Trail gradually fades back to normal | No audio — silent decay feels natural |
+
+Spin feedback must be immediate and readable so the player sees the connection between their steer swipe and the ball's change in curvature.
+
 ### Score Popups
 
 Points appear at the impact location, float upward briefly, and fade. If a multiplier is active, the multiplied total is shown in a larger, more prominent style (e.g., "750" instead of "250 ×3") so the player sees the reward immediately.
 
 ---
 
-## 10. Future Considerations
+## 10. Tips & Feature Discovery
+
+Street Soccer includes a **rotating tips system** that helps players discover mechanics and settings they might otherwise miss.
+
+### How Tips Are Shown
+
+- Tips appear contextually: on loading screens, after consecutive misses, and in the pause/settings menu
+- Each tip is shown once per session unless the player has not yet engaged with the feature it describes
+- Tips rotate through the list so the player sees different hints over time
+
+### Starter Tips
+
+| # | Tip Text | Context |
+|---|----------|---------|
+| 1 | "Enable **Trajectory Preview** in Settings to see your ball's predicted path." | After 3+ consecutive misses, or on first launch |
+| 2 | "Swipe while the ball is in the air to add **spin** and curve your shot!" | After the player's first Big Bomb, or after 10 kicks with no steer input |
+| 3 | "Hit targets in a row to build a **streak multiplier** — up to ×3!" | After the player's first streak of 2+ |
+| 4 | "Aim a powerful flick straight up to send a **Big Bomb** down the central corridor for bonus points." | After 20 kicks with no Big Bomb attempt |
+
+### Design Intent
+
+Tips are a low-friction discovery mechanism — they point players toward depth without requiring a tutorial. The tips list is extensible; new tips can be added as features are introduced in seasonal updates.
+
+---
+
+## 11. Future Considerations
 
 These ideas are explicitly **parked for later**. They are not part of the initial scope and should not influence current implementation decisions.
 
