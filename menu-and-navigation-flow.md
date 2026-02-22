@@ -228,12 +228,6 @@ A centered panel over a semi-transparent dimmed background. Contains the alpha-s
 │          │  Trajectory Preview      │            │
 │          │              [OFF | on ] │            │
 │          │                          │            │
-│          │  Master Volume           │            │
-│          │     ●━━━━━━━━━━━━━━━━━━  │            │
-│          │                          │            │
-│          │  SFX Volume              │            │
-│          │     ━━━━━━━━━━━━━━━━━●━  │            │
-│          │                          │            │
 │          └──────────────────────────┘            │
 │                                                  │
 └──────────────────────────────────────────────────┘
@@ -244,8 +238,6 @@ A centered panel over a semi-transparent dimmed background. Contains the alpha-s
 | Setting | Control Type | Maps To |
 |---------|-------------|---------|
 | **Trajectory Preview** | Toggle switch (on/off) | `SettingsData.trajectoryPreviewEnabled` |
-| **Master Volume** | Horizontal slider (0.0–1.0) | `SettingsData.masterVolume` |
-| **SFX Volume** | Horizontal slider (0.0–1.0) | `SettingsData.sfxVolume` |
 
 ### Behavior
 
@@ -254,9 +246,17 @@ A centered panel over a semi-transparent dimmed background. Contains the alpha-s
 | **Save behavior** | Changes save immediately to `settings.json` on each value change (see `save-and-persistence.md` Section 6). No "Apply" or "Save" button needed. |
 | **Close** | X button (top-right) or Android back button. Returns to the previous context (attract screen or pause menu). |
 
-### Post-Alpha Addition: Slider Side
+### Post-Alpha Additions
 
-The `SettingsData.sliderSide` field exists in the data model but the **Slider Side toggle is deferred to post-alpha**, alongside the handedness mirroring logic (see `ui-hud-layout.md` Section 11). When implemented, a left/right toggle will be added to this panel.
+The following settings controls exist in the `SettingsData` data model but are deferred from the alpha build:
+
+| Setting | Reason | When to Add |
+|---------|--------|-------------|
+| **Slider Side** (left/right toggle) | Handedness mirroring logic deferred to beta (see `ui-hud-layout.md` Section 11) | Alongside mirroring implementation |
+| **Master Volume** (slider, 0.0–1.0) | Alpha relies on Android system volume; in-app mixing deferred to beta | Alongside Audio Spec implementation |
+| **SFX Volume** (slider, 0.0–1.0) | Same as Master Volume | Alongside Audio Spec implementation |
+
+When implemented, these controls will be added to this panel. The data model fields (`sliderSide`, `masterVolume`, `sfxVolume`) remain in `SettingsData` unchanged.
 
 ---
 
