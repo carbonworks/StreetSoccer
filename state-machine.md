@@ -4,7 +4,7 @@ This State Machine Specification (SMS) is designed to be the "brain" of your Lib
 
 # 🤖 Game State Machine (GSM) Specification
 
-**Project:** Suburban Striker
+**Project:** Street Soccer
 
 **Architecture:** Finite State Machine (FSM) implemented via LibKTX `KtxScreen` and a custom `State` enum.
 
