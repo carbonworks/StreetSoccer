@@ -6,7 +6,7 @@ This is the authoritative design reference for Street Soccer. It describes **wha
 
 ## 1. Game Overview
 
-**Elevator Pitch:** Stand at the end of a suburban street and kick a soccer ball at anything that looks breakable. Nail windows, peg moving cars, and send Big Bombs screaming down the central alley — then do it again in the next neighborhood.
+**Elevator Pitch:** Stand at the end of a suburban street and kick a soccer ball at anything that looks breakable. Nail windows, peg moving cars, and send Big Bombs screaming down the central alley — then watch the street transform as seasons change and holidays arrive.
 
 | Attribute | Value |
 |-----------|-------|
@@ -104,7 +104,7 @@ The camera never moves. The entire level is visible at once. This keeps the game
 | **Drones** | Sky lane, Z-layer 4 | 500 | Moving | Small, far away — hardest standard target |
 | **Big Bomb distance** | Central corridor, Z-layer 3 | Variable | Skill | Points scale with distance traveled (see below) |
 
-Fences and house facades are **static colliders**, not targets — the ball bounces off them (a miss). Future neighborhoods may introduce additional target types (see Section 6).
+Fences and house facades are **static colliders**, not targets — the ball bounces off them (a miss). Future seasons and events may introduce additional target types (see Section 6).
 
 ### Combo / Streak Multiplier
 
@@ -133,13 +133,13 @@ When a kick exceeds the Big Bomb power threshold and enters the deep corridor (Z
 
 ---
 
-## 6. Neighborhoods (Levels)
+## 6. Seasons & Events (Levels)
 
-Each level is a self-contained **neighborhood** — a distinct environment with its own layout, target placement, and moving elements.
+The game takes place on **one street** — the Suburban Crossroads. Instead of traveling to new locations, the street itself transforms to reflect different **seasons, holidays, and neighborhood events**. The layout and collision geometry stay the same, but the visual theme, target dressing, moving elements, and audio all change.
 
-### Launch Neighborhood: Suburban Crossroads
+### The Base Street: Suburban Crossroads
 
-The first and primary environment. A wide suburban intersection with:
+The default environment. A wide suburban intersection with:
 
 - Two flanking townhomes (left and right) with targetable windows and garage doors
 - White picket fences along the front yards
@@ -147,24 +147,25 @@ The first and primary environment. A wide suburban intersection with:
 - A deep central road leading to the vanishing point
 - Open sky above for aerial targets
 
-This neighborhood teaches the core mechanics: aiming at static targets, timing shots against moving traffic, and discovering the Big Bomb corridor.
+This is the street the player always returns to. It teaches the core mechanics: aiming at static targets, timing shots against moving traffic, and discovering the Big Bomb corridor.
 
-### Future Neighborhoods (Planned)
+### Seasonal & Event Variants (Planned)
 
-New neighborhoods introduce **different layouts and target types** while keeping the same core controls and scoring system.
+Each variant re-skins the same street and swaps in thematic targets and moving elements, while keeping the core controls and scoring system identical.
 
-| Neighborhood | Concept | What Changes |
-|-------------|---------|-------------|
-| **Downtown Block** | Taller buildings, narrower alleys | More vertical targets (upper floors), tighter corridors |
-| **Industrial Yard** | Warehouses, loading docks, forklifts | Large slow-moving targets, breakable crates, metal sounds |
-| **Waterfront Pier** | Docks, boats, seagulls | Overwater targets, rocking boats as moving targets, wind effects |
-| **Night Market** | String lights, food stalls, neon signs | Lit-up targets, different visual atmosphere, crowds |
+| Variant | Theme | What Changes |
+|---------|-------|-------------|
+| **Summer Block Party** | Cookouts, lawn games, sprinklers | Inflatable targets on lawns, kids on bikes in cross-street, ice cream truck |
+| **Halloween Night** | Jack-o-lanterns, fog, spooky lighting | Pumpkin targets on porches, trick-or-treaters as moving targets, bats in sky lane |
+| **Winter Holidays** | Snow, string lights, decorations | Snowman targets, light-up reindeer on roofs, mail carrier with packages |
+| **Rainy Day** | Overcast, puddles, umbrellas | Umbrella-carrying pedestrians, delivery vans, altered bounce physics on wet ground |
+| **Garage Sale Saturday** | Tables on driveways, signs, clutter | Breakable junk on tables as new static targets, browsers milling on sidewalks |
 
-Each neighborhood is defined by its own level JSON file (see `suburban-crossroads.json` for the format), allowing targets, colliders, and spawn lanes to be tuned independently.
+Each variant is defined by its own level JSON file that extends the base `suburban-crossroads.json` format — same collider geometry, but different `target_sensors`, `spawn_lanes`, background image, and audio set.
 
-### Neighborhood Unlocks
+### Unlocking Variants
 
-New neighborhoods unlock based on **cumulative score milestones** across all play sessions. This rewards continued play without gating content behind skill walls — even a player who misses often will eventually accumulate enough points to unlock the next area.
+New variants unlock based on **cumulative score milestones** across all play sessions. This rewards continued play without gating content behind skill walls — even a player who misses often will eventually accumulate enough points to unlock the next event.
 
 ---
 
@@ -178,7 +179,7 @@ Street Soccer uses **free play / sandbox** structure. There are no lives, no gam
 |-----------|-------------|
 | **Personal bests** | Highest single-kick score, longest streak, best Big Bomb distance |
 | **Cumulative stats** | Total kicks, total points, total targets hit, total windows broken |
-| **Neighborhood unlocks** | New environments unlock at score milestones |
+| **Season/event unlocks** | New street variants unlock at score milestones |
 | **Cosmetic unlocks** | Ball skins and visual effects earned through play |
 
 ### Cosmetic Unlocks
@@ -195,14 +196,14 @@ The cosmetic system is intentionally minimal — a small collection of achievabl
 
 ### Stats Screen
 
-A persistent stats screen tracks the player's career. A **session** begins when the player enters a neighborhood from the menu and ends when they return to the menu or close the app.
+A persistent stats screen tracks the player's career. A **session** begins when the player enters a street variant from the menu and ends when they return to the menu or close the app.
 
 - **All-time high score** (best single session)
 - **Best streak** (most consecutive hits in any session)
 - **Longest Big Bomb** (greatest Y-distance reached)
 - **Total kicks / Total hits / Hit rate**
 - **Targets broken by type** (windows, vehicles, drones, etc.)
-- **Neighborhoods unlocked**
+- **Variants unlocked**
 
 ---
 
@@ -227,7 +228,7 @@ Moving targets serve multiple purposes:
 
 - **Break up static gameplay** — the player can't just memorize aim angles; they must react to timing
 - **Risk/reward layering** — moving targets are worth more points but harder to hit, especially at high streaks
-- **Visual life** — a neighborhood with moving cars, flying drones, and darting cats feels alive and playful
+- **Visual life** — a street with moving cars, flying drones, and darting cats feels alive and playful
 
 Moving targets are **not enemies** — they don't attack the player or end the game. They are simply higher-value scoring opportunities that pass through the scene.
 
@@ -278,16 +279,16 @@ These ideas are explicitly **parked for later**. They are not part of the initia
 
 | Idea | Notes |
 |------|-------|
-| **Local leaderboards** | Per-neighborhood high score tables stored on-device |
+| **Local leaderboards** | Per-variant high score tables stored on-device |
 | **Online leaderboards** | Would require a backend service — significant scope increase |
 | **Multiplayer** | Turn-based "beat my score" sharing; would need score validation |
-| **Seasonal content** | Holiday-themed neighborhoods or limited-time ball skins |
+| **Limited-time events** | Time-limited variants or exclusive ball skins tied to real-world holidays |
 | **Challenge mode** | Timed rounds or limited-kick scenarios as an alternative to free play |
 | **Weather effects** | Wind that alters ball trajectory, rain that changes bounce physics |
 | **Trick shots** | Ricochet scoring — ball bounces off a wall and hits a window for bonus points |
 | **Destructible environments** | Cumulative damage to buildings across sessions |
 
-These features may be revisited once the core loop is solid and the first neighborhood is fully playable.
+These features may be revisited once the core loop is solid and the base street is fully playable.
 
 ---
 
