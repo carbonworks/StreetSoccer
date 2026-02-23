@@ -144,7 +144,7 @@ A miss (wall hit, ground bounce, or out of bounds) resets the streak to zero. Th
 | `game-design-document.md` | Design intent, core loop, scoring rules, progression, seasonal variants |
 | `input-system.md` | Touch architecture, angle slider spec, flick detection, steer detection, state integration |
 | `physics-and-tuning.md` | Flight equations, Magnus/drag models, Big Bomb thresholds, restitution, all 17 tuning constants |
-| `state-machine.md` | Game states (BOOT → READY → AIMING → BALL_IN_FLIGHT → SCORING), transitions, and logic constraints |
+| `state-machine.md` | Game states (BOOT → READY → AIMING → BALL_IN_FLIGHT → SCORING / IMPACT_MISSED → READY, plus PAUSED), transitions, entry/exit actions, and system activity per state |
 | `environment-z-depth-and-collosion.md` | Z-layer architecture, depth scaling formula, collision mapping, spawning coordinates |
 | `save-and-persistence.md` | Save system — JSON storage, domain objects, session lifecycle, save triggers, schema versioning |
 | `menu-and-navigation-flow.md` | Menu structure — attract screen, variant selection, pause menu, settings/stats/cosmetics overlays, navigation flow |
