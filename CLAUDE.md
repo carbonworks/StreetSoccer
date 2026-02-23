@@ -47,6 +47,7 @@ Street Soccer is a **2.5D arcade game** for Android (LibGDX + Kotlin). The playe
 - **Tuning constants**: All physics constants live in `physics-and-tuning.md` Section 8 with suggested values and valid ranges. Currently 17 constants.
 - **Commit style**: Imperative mood, 1-2 sentence summary of "why".
 - **No Co-Authored-By**: Never add a Co-Authored-By trailer or any other attribution of AI tools in commit messages. All work in this repository belongs solely to the human author.
+- **Absolute paths in Bash**: Never use `cd` in Bash tool calls. Always use absolute paths or pass paths via flags (e.g., `git -C /full/path status` instead of `cd /full/path && git status`).
 
 ## Tech Stack (Planned for Implementation)
 

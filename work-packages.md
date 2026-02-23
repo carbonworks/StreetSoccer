@@ -16,7 +16,7 @@ This file defines independent work packages for parallel agent development. Each
 
 ## WP-0: LevelScreen Game Loop Skeleton — FOUNDATION
 
-**Status:** ready
+**Status:** done
 **Owns:** `LevelScreen.kt`
 **Reads:** `technical-architecture.md` (Section 3, 7), `GameBootstrapper.kt`, all ECS system files
 **Touches:** `GameBootstrapper.kt` (add KtxAsync init, SaveService, AudioService)
@@ -41,7 +41,7 @@ Wire up `LevelScreen` as the core gameplay screen per tech-arch Section 3 and 7:
 
 ## WP-1: GameStateManager — State Transitions & Timers
 
-**Status:** blocked (depends on WP-0)
+**Status:** done
 **Owns:** `GameStateManager.kt`
 **Reads:** `state-machine.md`, `technical-architecture.md` (Section 9)
 **Touches:** none
@@ -61,7 +61,7 @@ Implement full state machine logic:
 
 ## WP-2: CollisionSystem — Contact Routing & State Triggers
 
-**Status:** blocked (depends on WP-0)
+**Status:** done
 **Owns:** `CollisionSystem.kt`
 **Reads:** `PhysicsContactListener.kt`, `GameStateManager.kt`, `TargetComponent.kt`, `ColliderComponent.kt`, `technical-architecture.md` (Section 4, 5)
 **Touches:** none
@@ -81,7 +81,7 @@ Implement full state machine logic:
 
 ## WP-3: SpawnSystem — Moving Target Lifecycle
 
-**Status:** blocked (depends on WP-0)
+**Status:** ready
 **Owns:** `SpawnSystem.kt`
 **Reads:** `SpawnLaneComponent.kt`, `suburban-crossroads.json`, `environment-z-depth-and-collosion.md`, `technical-architecture.md` (Section 4)
 **Touches:** `LevelLoader.kt` (add spawn lane entity creation from JSON)
@@ -100,7 +100,7 @@ Implement full state machine logic:
 
 ## WP-4: InputSystem Bridge — Flick-to-Ball & Steer-to-Spin
 
-**Status:** blocked (depends on WP-0)
+**Status:** ready
 **Owns:** `InputSystem.kt`
 **Reads:** `InputRouter.kt`, `FlickDetector.kt`, `SteerDetector.kt`, `AngleSliderController.kt`, `input-system.md`, `physics-and-tuning.md`
 **Touches:** `InputRouter.kt` (add callback/result interface if needed)
@@ -120,7 +120,7 @@ Implement full state machine logic:
 
 ## WP-5: HUD System — Score, Streak, Steer Meter
 
-**Status:** blocked (depends on WP-0)
+**Status:** ready
 **Owns:** new file `core/.../ecs/systems/HudSystem.kt`
 **Reads:** `ui-hud-layout.md`, `technical-architecture.md` (Section 8), `GameStateManager.kt`
 **Touches:** none
@@ -142,7 +142,7 @@ Implement full state machine logic:
 
 ## WP-6: LoadingScreen + Asset Pipeline
 
-**Status:** ready (no gameplay dependencies)
+**Status:** done
 **Owns:** `LoadingScreen.kt`
 **Reads:** `technical-architecture.md` (Section 11), `LevelLoader.kt`
 **Touches:** `GameBootstrapper.kt` (add AssetManager as shared resource)
@@ -161,7 +161,7 @@ Implement full state machine logic:
 
 ## WP-7: AttractScreen + Menu Overlays
 
-**Status:** ready (no gameplay dependencies)
+**Status:** done
 **Owns:** `AttractScreen.kt`
 **Reads:** `menu-and-navigation-flow.md`, `technical-architecture.md` (Section 3)
 **Touches:** none
@@ -181,7 +181,7 @@ Implement full state machine logic:
 
 ## WP-8: SaveService Expansion
 
-**Status:** ready (no gameplay dependencies)
+**Status:** done
 **Owns:** `Services.kt`
 **Reads:** `save-and-persistence.md`, `technical-architecture.md` (Section 10)
 **Touches:** none
@@ -200,7 +200,7 @@ Implement full state machine logic:
 
 ## WP-9: Ball Shadow Rendering
 
-**Status:** blocked (depends on WP-0)
+**Status:** ready
 **Owns:** new file `core/.../ecs/components/BallShadowComponent.kt` (optional — could use tag on existing entity)
 **Reads:** `environment-z-depth-and-collosion.md`, `physics-and-tuning.md`, `technical-architecture.md` (Section 8)
 **Touches:** `RenderSystem.kt` (add shadow drawing before ball sprite)
