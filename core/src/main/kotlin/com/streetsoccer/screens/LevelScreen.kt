@@ -58,7 +58,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     private val collisionSystem = CollisionSystem(contactListener)
     private val renderSystem = RenderSystem(batch)
     private val spawnSystem = SpawnSystem()
-    private val inputSystem = InputSystem()
+    private val inputSystem = InputSystem(inputRouter, gameStateManager, world)
 
     override fun show() {
         Gdx.app.log("LevelScreen", "show")
