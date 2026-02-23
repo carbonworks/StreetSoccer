@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Body -->
+  <polygon points="10,40 90,40 85,80 15,80" fill="#FFC107" />
+  <!-- Cab -->
+  <polygon points="25,40 75,40 65,15 35,15" fill="#FFA000" />
+  <!-- Wheels -->
+  <circle cx="25" cy="80" r="15" fill="#212121" />
+  <circle cx="25" cy="80" r="8" fill="#BDBDBD" />
+  <circle cx="75" cy="80" r="15" fill="#212121" />
+  <circle cx="75" cy="80" r="8" fill="#BDBDBD" />
+  <!-- Windows -->
+  <polygon points="30,35 70,35 60,20 40,20" fill="#E3F2FD" fill-opacity="0.8" />
+  <!-- Details -->
+  <line x1="15" y1="50" x2="85" y2="50" stroke="#FF8F00" stroke-width="2"/>
+  <rect x="15" y="45" width="10" height="5" fill="#F44336" />
+  <rect x="75" y="45" width="10" height="5" fill="#F44336" />
+</svg>

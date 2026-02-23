@@ -1,0 +1,19 @@
+# Gradle
+.gradle/
+build/
+local.properties
+
+# IDE
+.idea/
+*.iml
+
+# Claude Code
+.claude/
+
+# Android
+android/build/
+android/libs/
+
+# OS
+.DS_Store
+Thumbs.db
