@@ -4,7 +4,7 @@ By hardcoding these layers and zones, your AI coding assistants (Claude/Gemini) 
 
 ---
 
-# 📜 Environment Z-Depth & Collision Specification
+# Environment Z-Depth & Collision Specification
 
 **Level Name:** Suburban Crossroads (Base Environment)
 **Perspective:** 1-Point Perspective (Center Vanishing Point)
@@ -72,6 +72,9 @@ When you ask the AI to spawn a "Duck" (target), use these reference guidelines b
 
 ---
 
-### Your Next Step
+## Companion Documents
 
-**Would you like me to map out the JSON structure for these collision boxes and target zones, so you can feed it directly to the LibGDX `LevelLoader`?** This will save you from having to manually guess the X/Y coordinates in your code.
+- **`physics-and-tuning.md`** — Restates the coordinate system (Section 1) and defines ball shadow rendering (Section 5) that uses the depth scaling formula from Section 3 of this document.
+- **`suburban-crossroads.json`** — Level data containing the concrete collider geometry, target sensor coordinates, and spawn lane definitions for the Suburban Crossroads environment.
+- **`technical-architecture.md`** — Rendering pipeline (Section 8) implements the Z-layer sort order defined here. Box2D integration (Section 5) builds static bodies from the collision mapping.
+- **`game-design-document.md`** — Design intent for the 2.5D play field and target placement.
