@@ -156,6 +156,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     override fun dispose() {
         Gdx.app.log("LevelScreen", "dispose")
+        renderSystem.dispose()
         batch.dispose()
         stage.dispose()
         world.dispose()
