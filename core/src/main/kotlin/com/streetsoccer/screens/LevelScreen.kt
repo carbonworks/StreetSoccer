@@ -28,6 +28,7 @@ import com.streetsoccer.ecs.systems.TrajectorySystem
 import com.streetsoccer.input.InputRouter
 import com.streetsoccer.physics.PhysicsContactListener
 import com.streetsoccer.physics.TuningConstants
+import com.streetsoccer.rendering.BackgroundRenderer
 import com.streetsoccer.services.SessionAccumulator
 import com.streetsoccer.state.GameState
 import com.streetsoccer.state.GameStateListener
@@ -56,7 +57,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     // --- Rendering ---
     private val batch = SpriteBatch()
     private val viewport = FitViewport(1920f, 1080f)
-    private var backgroundTexture: Texture? = null
+    private val backgroundRenderer = BackgroundRenderer(1920f, 1080f)
 
     // --- ECS Engine ---
     private val engine = Engine()
@@ -121,10 +122,8 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     override fun show() {
         Gdx.app.log("LevelScreen", "show")
 
-        // Load background texture from AssetManager
-        if (game.assets.isLoaded("background.jpg")) {
-            backgroundTexture = game.assets.get("background.jpg", Texture::class.java)
-        }
+        // Load background layers (falls back to background.jpg if layers don't exist)
+        backgroundRenderer.load()
 
         // Catch Android back key so it doesn't exit the app
         @Suppress("DEPRECATION")
@@ -134,7 +133,6 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         gameStateManager.addListener(pauseStateListener)
 
         // Begin a new session: reset accumulator counters to zero
-        // (per save-and-persistence.md Section 5 — session start)
         sessionAccumulator.reset()
 
         // Register all ECS systems with the engine
@@ -180,17 +178,10 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         Gdx.gl.glClearColor(0.1f, 0.1f, 0.1f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        // Update projection matrix so batch renders in game-world coordinates
+        // Draw background layers before any ECS entities.
         viewport.apply()
         batch.projectionMatrix = viewport.camera.combined
-
-        // Draw level background (reset batch color to avoid tint bleed from RenderSystem)
-        backgroundTexture?.let { bg ->
-            batch.begin()
-            batch.setColor(1f, 1f, 1f, 1f)
-            batch.draw(bg, 0f, 0f, 1920f, 1080f)
-            batch.end()
-        }
+        backgroundRenderer.render(batch)
 
         // --- Game Loop (per technical-architecture.md Section 7) ---
 
@@ -382,6 +373,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     override fun dispose() {
         Gdx.app.log("LevelScreen", "dispose")
+        backgroundRenderer.dispose()
         renderSystem.dispose()
         hudSystem.dispose()
         trajectorySystem.dispose()
