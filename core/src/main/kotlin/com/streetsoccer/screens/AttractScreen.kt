@@ -16,8 +16,12 @@ import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.streetsoccer.GameBootstrapper
+import com.streetsoccer.services.CareerStats
+import com.streetsoccer.services.ProfileData
 import com.streetsoccer.services.SettingsData
 import ktx.app.KtxScreen
+import java.text.NumberFormat
+import java.util.Locale
 
 /**
  * Attract screen (main menu) — the arcade-style entry point that draws the player
@@ -64,7 +68,7 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
     // Overlay panel dimensions — settings panel is taller to hold all controls
     private val panelWidth = 660f
     private val settingsPanelHeight = 620f
-    private val statsPanelHeight = 500f
+    private val statsPanelHeight = 700f
 
     // --- Settings overlay state ---
     // In-memory copy of settings, loaded when the overlay opens
@@ -80,6 +84,9 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
 
     // Which slider is currently being dragged (-1 = none, 0 = music, 1 = sfx)
     private var draggingSlider = -1
+
+    // Cached profile data — loaded fresh each time the stats overlay opens
+    private var cachedProfile: ProfileData? = null
 
     // Temporary vector for unprojecting touch coordinates
     private val touchPoint = Vector3()
@@ -121,6 +128,7 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
 
             // No overlay open — check icon bar
             if (statsButtonBounds.contains(wx, wy)) {
+                cachedProfile = game.saveService.loadProfile()
                 activeOverlay = Overlay.STATS
                 return true
             }
@@ -678,7 +686,9 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
     }
 
     private fun drawStatsContent(panelX: Float, panelY: Float) {
+        val career = cachedProfile?.career ?: CareerStats()
         val contentX = panelX + 40f
+        val valueRightEdge = panelX + panelWidth - 40f
         val topY = panelY + statsPanelHeight - 60f
 
         // Header
@@ -694,21 +704,37 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
         layout.setText(font, "-------------------------------------------")
         font.draw(batch, layout, panelX + (panelWidth - layout.width) / 2f, topY - 40f)
 
-        // Placeholder stat rows
-        font.data.setScale(2f)
-        font.color = Color.LIGHT_GRAY
-        val lineHeight = 45f
-        var y = topY - 100f
+        // Format numbers with thousands separators
+        val nf = NumberFormat.getIntegerInstance(Locale.US)
 
+        // Compute hit rate
+        val hitRate = if (career.totalKicks > 0) {
+            String.format(Locale.US, "%.1f%%", career.totalHits.toDouble() / career.totalKicks.toDouble() * 100.0)
+        } else {
+            "--"
+        }
+
+        // Format longest bomb distance
+        val longestBomb = if (career.longestBigBombDistance > 0f) {
+            String.format(Locale.US, "%.1fm", career.longestBigBombDistance)
+        } else {
+            "--"
+        }
+
+        // Career stat rows
         val stats = listOf(
-            "Total Kicks" to "0",
-            "Total Hits" to "0",
-            "Hit Rate" to "--",
-            "Total Score" to "0",
-            "Best Session" to "0",
-            "Best Streak" to "0",
-            "Longest Bomb" to "-- m"
+            "Total Kicks" to nf.format(career.totalKicks),
+            "Total Hits" to nf.format(career.totalHits),
+            "Hit Rate" to hitRate,
+            "Total Score" to nf.format(career.totalScore),
+            "Best Session" to nf.format(career.bestSessionScore),
+            "Best Streak" to nf.format(career.bestStreak),
+            "Longest Bomb" to longestBomb
         )
+
+        font.data.setScale(2f)
+        val lineHeight = 42f
+        var y = topY - 100f
 
         for ((label, value) in stats) {
             font.color = Color.LIGHT_GRAY
@@ -717,13 +743,51 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
 
             font.color = Color.WHITE
             layout.setText(font, value)
-            font.draw(batch, layout, panelX + panelWidth - 120f - layout.width, y)
+            font.draw(batch, layout, valueRightEdge - layout.width, y)
 
             y -= lineHeight
         }
 
+        // Targets by type section
+        if (career.targetsByType.isNotEmpty()) {
+            y -= 10f // extra spacing before section
+
+            // Section header
+            font.data.setScale(1.5f)
+            font.color = Color.GRAY
+            layout.setText(font, "-- Targets --")
+            font.draw(batch, layout, panelX + (panelWidth - layout.width) / 2f, y)
+            y -= 38f
+
+            font.data.setScale(1.8f)
+            // Sort by count descending for a leaderboard feel
+            val sortedTargets = career.targetsByType.entries.sortedByDescending { it.value }
+            for ((typeKey, count) in sortedTargets) {
+                font.color = Color.LIGHT_GRAY
+                val displayName = formatTargetTypeName(typeKey)
+                layout.setText(font, displayName)
+                font.draw(batch, layout, contentX + 20f, y)
+
+                font.color = Color.WHITE
+                layout.setText(font, nf.format(count))
+                font.draw(batch, layout, valueRightEdge - layout.width, y)
+
+                y -= 36f
+            }
+        }
+
         font.data.setScale(3f)
         font.color = Color.WHITE
+    }
+
+    /**
+     * Convert a target type key (e.g. "garage_door", "window") to a display name
+     * with title case and underscores replaced by spaces.
+     */
+    private fun formatTargetTypeName(key: String): String {
+        return key.split("_").joinToString(" ") { word ->
+            word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() }
+        }
     }
 
     // --- Utility ---
