@@ -34,15 +34,31 @@ class LoadingScreen(private val game: GameBootstrapper) : KtxScreen {
     /**
      * Queue all game assets into the shared AssetManager.
      *
-     * Currently queues background.jpg (the level background texture).
+     * Queues layered background images (sky, ground, buildings) if they exist,
+     * plus the monolithic background.jpg as a fallback. BackgroundRenderer in
+     * LevelScreen handles the fallback logic at render time — here we simply
+     * load whatever files are available.
+     *
      * SVG sprites are not loaded yet — AmanithSVG integration is pending.
      * When new texture assets are added to assets/, queue them here.
      */
     private fun queueAssets() {
         val assets = game.assets
 
-        // Queue the level background image.
-        // This file must exist in the assets/ directory to be loadable.
+        // Queue layered background images (if present).
+        val layerPaths = listOf(
+            "backgrounds/sky.png",
+            "backgrounds/ground.png",
+            "backgrounds/buildings.png"
+        )
+        for (path in layerPaths) {
+            if (Gdx.files.internal(path).exists()) {
+                assets.load(path, Texture::class.java)
+                Gdx.app.log("LoadingScreen", "Queued background layer: $path")
+            }
+        }
+
+        // Queue the monolithic fallback background.
         if (Gdx.files.internal("background.jpg").exists()) {
             assets.load("background.jpg", Texture::class.java)
         } else {

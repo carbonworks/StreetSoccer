@@ -21,6 +21,7 @@ import com.streetsoccer.ecs.systems.SpawnSystem
 import com.streetsoccer.input.InputRouter
 import com.streetsoccer.physics.PhysicsContactListener
 import com.streetsoccer.physics.TuningConstants
+import com.streetsoccer.rendering.BackgroundRenderer
 import com.streetsoccer.services.SessionAccumulator
 import com.streetsoccer.state.GameState
 import com.streetsoccer.state.GameStateManager
@@ -47,6 +48,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     // --- Rendering ---
     private val batch = SpriteBatch()
     private val viewport = FitViewport(1920f, 1080f)
+    private val backgroundRenderer = BackgroundRenderer(1920f, 1080f)
 
     // --- ECS Engine ---
     private val engine = Engine()
@@ -67,6 +69,9 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     override fun show() {
         Gdx.app.log("LevelScreen", "show")
+
+        // Load background layers (falls back to background.jpg if layers don't exist)
+        backgroundRenderer.load()
 
         // Register all ECS systems with the engine
         engine.addSystem(physicsSystem)
@@ -91,6 +96,13 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         // Clear the screen
         Gdx.gl.glClearColor(0.3f, 0.3f, 0.3f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+
+        // Draw background layers before any ECS entities.
+        // The background is rendered using the viewport camera so it maps to
+        // the 1920x1080 game coordinate space.
+        viewport.apply()
+        batch.projectionMatrix = viewport.camera.combined
+        backgroundRenderer.render(batch)
 
         // --- Game Loop (per technical-architecture.md Section 7) ---
 
@@ -168,6 +180,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     override fun dispose() {
         Gdx.app.log("LevelScreen", "dispose")
+        backgroundRenderer.dispose()
         renderSystem.dispose()
         hudSystem.dispose()
         batch.dispose()

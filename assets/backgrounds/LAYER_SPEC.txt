@@ -1,0 +1,39 @@
+Background Layer Specification
+==============================
+
+The multi-layer background system expects three PNG files in this directory.
+Each file must be 1920x1080 pixels with transparency (RGBA) so layers behind
+show through.
+
+Layer files (in draw order, back to front):
+
+1. sky.png
+   - Solid sky gradient, clouds, and any atmospheric elements.
+   - This is the furthest-back layer.
+   - For seasonal variants, swap this file (e.g., sunset, night sky, overcast).
+   - No transparency needed (fully opaque).
+
+2. ground.png
+   - Roads, sidewalks, grass, manhole cover, horizon line.
+   - The road going straight back should curve right.
+   - Upper-right sidewalk continues straight and intersects with the curved road.
+   - Horizon sits just behind the curved road with some grass/sidewalk.
+   - Upper portion must be transparent to let the sky show through.
+
+3. buildings.png
+   - Building facades, windows, fences, and other vertical structures.
+   - These sit at their appropriate depth in the scene.
+   - Left townhome and right townhome facades.
+   - Areas outside the buildings must be transparent.
+
+Fallback behavior:
+   If none of these layer files exist, the renderer falls back to
+   background.jpg in the project root. If that also doesn't exist,
+   the screen clear color shows through.
+
+Art extraction from background.jpg:
+   These layers should be extracted from the existing background.jpg using
+   image editing tools (e.g., GIMP, Photoshop). The general process:
+   1. Separate the sky region from the rest of the scene.
+   2. Separate the ground/road elements from the buildings.
+   3. Export each layer as a 1920x1080 PNG with transparency.
