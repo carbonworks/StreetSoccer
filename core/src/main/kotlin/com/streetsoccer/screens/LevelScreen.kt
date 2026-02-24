@@ -3,7 +3,9 @@ package com.streetsoccer.screens
 import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.Family
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputMultiplexer
+import com.badlogic.gdx.InputAdapter
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.math.Vector2
@@ -23,12 +25,14 @@ import com.streetsoccer.physics.PhysicsContactListener
 import com.streetsoccer.physics.TuningConstants
 import com.streetsoccer.services.SessionAccumulator
 import com.streetsoccer.state.GameState
+import com.streetsoccer.state.GameStateListener
 import com.streetsoccer.state.GameStateManager
+import com.streetsoccer.ui.PauseOverlay
 import ktx.app.KtxScreen
 
 /**
  * Core gameplay screen. Manages the ECS engine, physics world, input routing,
- * HUD stage, and the main game loop per technical-architecture.md Section 7.
+ * HUD stage, pause overlay, and the main game loop per technical-architecture.md Section 7.
  */
 class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
@@ -53,6 +57,10 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     // --- Input ---
     private val inputRouter = InputRouter(gameStateManager)
+    private lateinit var inputMultiplexer: InputMultiplexer
+
+    // --- Pause Overlay ---
+    private lateinit var pauseOverlay: PauseOverlay
 
     // --- Fixed-timestep accumulator for Box2D world stepping ---
     private var accumulator = 0f
@@ -65,8 +73,60 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     private val inputSystem = InputSystem(inputRouter, gameStateManager, world)
     private val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
 
+    /**
+     * Listens for state transitions to automatically show/hide the pause overlay.
+     * This ensures the overlay appears regardless of what triggered the pause
+     * (pause icon tap, Android back button, etc.).
+     */
+    private val pauseStateListener = object : GameStateListener {
+        override fun onStateEnter(newState: GameState) {
+            if (newState is GameState.Paused && ::pauseOverlay.isInitialized) {
+                pauseOverlay.show()
+            }
+        }
+
+        override fun onStateExit(oldState: GameState) {
+            if (oldState is GameState.Paused && ::pauseOverlay.isInitialized) {
+                pauseOverlay.hide()
+            }
+        }
+    }
+
+    /**
+     * Input processor that handles Android back button and escape key during gameplay.
+     *
+     * Per menu-and-navigation-flow.md Section 8:
+     * - During active gameplay: back button triggers pause (same as tapping pause icon)
+     * - During PAUSED (no overlay): back button acts as Resume
+     */
+    private val backButtonProcessor = object : InputAdapter() {
+        override fun keyDown(keycode: Int): Boolean {
+            if (keycode == Input.Keys.BACK || keycode == Input.Keys.ESCAPE) {
+                if (gameStateManager.isPaused) {
+                    // Paused state: back acts as Resume
+                    handleResume()
+                    return true
+                }
+                // Gameplay state: back triggers pause
+                if (gameStateManager.isInGameplay) {
+                    gameStateManager.pause()
+                    // Overlay will be shown automatically by pauseStateListener
+                    return true
+                }
+            }
+            return false
+        }
+    }
+
     override fun show() {
         Gdx.app.log("LevelScreen", "show")
+
+        // Catch Android back key so it doesn't exit the app
+        @Suppress("DEPRECATION")
+        Gdx.input.setCatchBackKey(true)
+
+        // Register pause state listener to auto-show/hide the overlay
+        gameStateManager.addListener(pauseStateListener)
 
         // Register all ECS systems with the engine
         engine.addSystem(physicsSystem)
@@ -76,12 +136,26 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         engine.addSystem(inputSystem)
         engine.addSystem(hudSystem)
 
-        // Set up input multiplexer: HUD stage first (for pause icon taps),
-        // then InputRouter (for gameplay gestures)
-        val inputMultiplexer = InputMultiplexer()
+        // Create pause overlay with resume/quit callbacks
+        pauseOverlay = PauseOverlay(
+            onResume = { handleResume() },
+            onQuit = { handleQuit() }
+        )
+
+        // Set up input multiplexer with priority order:
+        // 1. Back button handler (highest priority — catches BACK/ESCAPE before anyone else)
+        // 2. Pause overlay stage (when visible, consumes all taps via dim background)
+        // 3. HUD stage (for pause icon taps)
+        // 4. InputRouter (for gameplay gestures — flick, slider, steer)
+        inputMultiplexer = InputMultiplexer()
+        inputMultiplexer.addProcessor(backButtonProcessor)
+        inputMultiplexer.addProcessor(pauseOverlay.stage)
         inputMultiplexer.addProcessor(hudSystem.getStage())
         inputMultiplexer.addProcessor(inputRouter)
         Gdx.input.inputProcessor = inputMultiplexer
+
+        // Start with overlay hidden
+        pauseOverlay.hide()
 
         // Transition game state to Ready for gameplay
         gameStateManager.transitionTo(GameState.Ready)
@@ -132,6 +206,35 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         // 6. Wire HUD inputs from InputRouter
         hudSystem.sliderValue = inputRouter.sliderValue
         hudSystem.steerSwipeCount = inputRouter.steerSwipeCount
+
+        // 7. Render pause overlay on top of everything (if visible)
+        pauseOverlay.render(delta)
+    }
+
+    // --- Pause overlay callbacks ---
+
+    /**
+     * Handle resume from pause: hide overlay, restore pre-pause game state.
+     */
+    private fun handleResume() {
+        pauseOverlay.hide()
+        gameStateManager.resume()
+    }
+
+    /**
+     * Handle quit from pause menu: save session, return to attract screen.
+     *
+     * Per state-machine.md Section 2I and menu-and-navigation-flow.md Section 4:
+     * - Trigger session end: merge session counters into CareerStats, write profile.json
+     * - Transition to MAIN_MENU
+     * - No confirmation dialog (arcade games don't ask "are you sure?")
+     */
+    private fun handleQuit() {
+        pauseOverlay.hide()
+        // TODO: merge session stats into CareerStats and persist via SaveService
+        // game.saveService.mergeSessionAndSave(sessionAccumulator)
+        gameStateManager.quit()
+        game.setScreen<AttractScreen>()
     }
 
     /**
@@ -159,17 +262,25 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         Gdx.app.log("LevelScreen", "hide")
         // Clear input processor when leaving this screen
         Gdx.input.inputProcessor = null
+        // Unregister pause listener to prevent stale callbacks
+        gameStateManager.removeListener(pauseStateListener)
     }
 
     override fun resize(width: Int, height: Int) {
         viewport.update(width, height, true)
         hudSystem.resize(width, height)
+        if (::pauseOverlay.isInitialized) {
+            pauseOverlay.resize(width, height)
+        }
     }
 
     override fun dispose() {
         Gdx.app.log("LevelScreen", "dispose")
         renderSystem.dispose()
         hudSystem.dispose()
+        if (::pauseOverlay.isInitialized) {
+            pauseOverlay.dispose()
+        }
         batch.dispose()
         world.dispose()
     }
