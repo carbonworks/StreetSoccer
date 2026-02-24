@@ -13,7 +13,8 @@ class SteerDetector {
     private var lastX = 0f
     private var lastY = 0f
     private var lastTime = 0L
-    private var swipeCount = 0
+    var swipeCount = 0
+        private set
 
     // Reset this counter on each new kick (when entering BALL_IN_FLIGHT)
     fun resetSwipeCounter() {

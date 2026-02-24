@@ -1,6 +1,11 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
 }
+
+val gdxVersion: String by rootProject.extra
+val ktxVersion: String by rootProject.extra
+val ashleyVersion: String by rootProject.extra
 
 dependencies {
     api("com.badlogicgames.gdx:gdx:$gdxVersion")

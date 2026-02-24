@@ -3,16 +3,17 @@ package com.streetsoccer.screens
 import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.Family
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.InputMultiplexer
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.World
-import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.streetsoccer.GameBootstrapper
 import com.streetsoccer.ecs.components.ColliderComponent
 import com.streetsoccer.ecs.components.TransformComponent
 import com.streetsoccer.ecs.systems.CollisionSystem
+import com.streetsoccer.ecs.systems.HudSystem
 import com.streetsoccer.ecs.systems.InputSystem
 import com.streetsoccer.ecs.systems.PhysicsSystem
 import com.streetsoccer.ecs.systems.RenderSystem
@@ -20,9 +21,10 @@ import com.streetsoccer.ecs.systems.SpawnSystem
 import com.streetsoccer.input.InputRouter
 import com.streetsoccer.physics.PhysicsContactListener
 import com.streetsoccer.physics.TuningConstants
+import com.streetsoccer.services.SessionAccumulator
 import com.streetsoccer.state.GameState
 import com.streetsoccer.state.GameStateManager
-import io.github.libktx.app.KtxScreen
+import ktx.app.KtxScreen
 
 /**
  * Core gameplay screen. Manages the ECS engine, physics world, input routing,
@@ -33,6 +35,9 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     // --- State Management ---
     private val gameStateManager = GameStateManager()
 
+    // --- Session Accumulator (tracks score, streak, per-type hits) ---
+    private val sessionAccumulator = SessionAccumulator()
+
     // --- Box2D World (zero gravity — gravity handled in game-space by PhysicsSystem) ---
     private val contactListener = PhysicsContactListener()
     private val world = World(Vector2(0f, 0f), true).apply {
@@ -42,7 +47,6 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     // --- Rendering ---
     private val batch = SpriteBatch()
     private val viewport = FitViewport(1920f, 1080f)
-    private val stage = Stage(viewport)
 
     // --- ECS Engine ---
     private val engine = Engine()
@@ -55,10 +59,11 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     // --- ECS Systems (held as fields for direct access in the game loop) ---
     private val physicsSystem = PhysicsSystem()
-    private val collisionSystem = CollisionSystem(contactListener)
+    private val collisionSystem = CollisionSystem(contactListener, gameStateManager, sessionAccumulator, engine)
     private val renderSystem = RenderSystem(batch)
-    private val spawnSystem = SpawnSystem()
+    private val spawnSystem = SpawnSystem(gameStateManager)
     private val inputSystem = InputSystem(inputRouter, gameStateManager, world)
+    private val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
 
     override fun show() {
         Gdx.app.log("LevelScreen", "show")
@@ -69,9 +74,14 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         engine.addSystem(renderSystem)
         engine.addSystem(spawnSystem)
         engine.addSystem(inputSystem)
+        engine.addSystem(hudSystem)
 
-        // Set the input processor to the InputRouter
-        Gdx.input.inputProcessor = inputRouter
+        // Set up input multiplexer: HUD stage first (for pause icon taps),
+        // then InputRouter (for gameplay gestures)
+        val inputMultiplexer = InputMultiplexer()
+        inputMultiplexer.addProcessor(hudSystem.getStage())
+        inputMultiplexer.addProcessor(inputRouter)
+        Gdx.input.inputProcessor = inputMultiplexer
 
         // Transition game state to Ready for gameplay
         gameStateManager.transitionTo(GameState.Ready)
@@ -109,7 +119,8 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         }
 
         // Run all ECS systems (PhysicsSystem handles its own fixed-timestep internally,
-        // RenderSystem draws, SpawnSystem manages lanes, InputSystem delegates to InputRouter)
+        // RenderSystem draws, SpawnSystem manages lanes, InputSystem delegates to InputRouter,
+        // HudSystem renders the HUD via its own stage)
         engine.update(delta)
 
         // 4. Update state machine (timers for SCORING/IMPACT_MISSED transitions)
@@ -118,9 +129,9 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         // 5. Sync Box2D positions from game-space (game-space is authoritative)
         syncBox2DPositions()
 
-        // 7. Draw HUD (stage contains HUD actors managed by ktx-scene2d)
-        stage.act(delta)
-        stage.draw()
+        // 6. Wire HUD inputs from InputRouter
+        hudSystem.sliderValue = inputRouter.sliderValue
+        hudSystem.steerSwipeCount = inputRouter.steerSwipeCount
     }
 
     /**
@@ -152,13 +163,14 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     override fun resize(width: Int, height: Int) {
         viewport.update(width, height, true)
+        hudSystem.resize(width, height)
     }
 
     override fun dispose() {
         Gdx.app.log("LevelScreen", "dispose")
         renderSystem.dispose()
+        hudSystem.dispose()
         batch.dispose()
-        stage.dispose()
         world.dispose()
     }
 }

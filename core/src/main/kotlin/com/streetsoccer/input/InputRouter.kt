@@ -52,6 +52,12 @@ class InputRouter(
         return result
     }
 
+    /** Current steer swipe count for HUD display. */
+    val steerSwipeCount: Int get() = steerDetector.swipeCount
+
+    /** Current angle slider value (0.0-1.0) for HUD display. */
+    val sliderValue: Float get() = angleSliderController.sliderValue
+
     /** Reset the steer detector's swipe counter. Called by InputSystem at the start of each new kick. */
     fun resetSteerSwipeCounter() {
         steerDetector.resetSwipeCounter()

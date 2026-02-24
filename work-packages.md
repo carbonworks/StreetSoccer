@@ -81,7 +81,7 @@ Implement full state machine logic:
 
 ## WP-3: SpawnSystem — Moving Target Lifecycle
 
-**Status:** ready
+**Status:** done
 **Owns:** `SpawnSystem.kt`
 **Reads:** `SpawnLaneComponent.kt`, `suburban-crossroads.json`, `environment-z-depth-and-collosion.md`, `technical-architecture.md` (Section 4)
 **Touches:** `LevelLoader.kt` (add spawn lane entity creation from JSON)
@@ -100,7 +100,7 @@ Implement full state machine logic:
 
 ## WP-4: InputSystem Bridge — Flick-to-Ball & Steer-to-Spin
 
-**Status:** ready
+**Status:** done
 **Owns:** `InputSystem.kt`
 **Reads:** `InputRouter.kt`, `FlickDetector.kt`, `SteerDetector.kt`, `AngleSliderController.kt`, `input-system.md`, `physics-and-tuning.md`
 **Touches:** `InputRouter.kt` (add callback/result interface if needed)
@@ -120,7 +120,7 @@ Implement full state machine logic:
 
 ## WP-5: HUD System — Score, Streak, Steer Meter
 
-**Status:** ready
+**Status:** done
 **Owns:** new file `core/.../ecs/systems/HudSystem.kt`
 **Reads:** `ui-hud-layout.md`, `technical-architecture.md` (Section 8), `GameStateManager.kt`
 **Touches:** none
@@ -200,7 +200,7 @@ Implement full state machine logic:
 
 ## WP-9: Ball Shadow Rendering
 
-**Status:** ready
+**Status:** done
 **Owns:** new file `core/.../ecs/components/BallShadowComponent.kt` (optional — could use tag on existing entity)
 **Reads:** `environment-z-depth-and-collosion.md`, `physics-and-tuning.md`, `technical-architecture.md` (Section 8)
 **Touches:** `RenderSystem.kt` (add shadow drawing before ball sprite)

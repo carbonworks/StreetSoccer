@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.JsonReader
 import com.badlogic.gdx.utils.JsonValue
 import com.streetsoccer.GameBootstrapper
-import io.github.libktx.app.KtxScreen
+import ktx.app.KtxScreen
 
 /**
  * Handles asset loading via LibGDX AssetManager, shows a progress bar,

@@ -9,8 +9,8 @@ import com.streetsoccer.screens.LoadingScreen
 import com.streetsoccer.services.AudioService
 import com.streetsoccer.services.NoopAudioService
 import com.streetsoccer.services.SaveService
-import io.github.libktx.app.KtxGame
-import io.github.libktx.app.KtxScreen
+import ktx.app.KtxGame
+import ktx.app.KtxScreen
 import ktx.async.KtxAsync
 
 class GameBootstrapper : KtxGame<KtxScreen>() {

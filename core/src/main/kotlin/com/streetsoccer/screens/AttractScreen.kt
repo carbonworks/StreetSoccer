@@ -16,7 +16,7 @@ import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.streetsoccer.GameBootstrapper
-import io.github.libktx.app.KtxScreen
+import ktx.app.KtxScreen
 
 /**
  * Attract screen (main menu) — the arcade-style entry point that draws the player

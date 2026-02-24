@@ -2,6 +2,8 @@ plugins {
     kotlin("jvm")
 }
 
+val gdxVersion: String by rootProject.extra
+
 dependencies {
     implementation(project(":core"))
     implementation("com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion")

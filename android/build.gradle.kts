@@ -3,6 +3,10 @@ plugins {
     kotlin("android")
 }
 
+val gdxVersion: String by rootProject.extra
+
+val natives: Configuration by configurations.creating
+
 android {
     namespace = "com.streetsoccer.android"
     compileSdk = 34
