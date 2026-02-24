@@ -37,6 +37,20 @@
 - [ ] Big Bomb Meteor Sprite Set — Replace the alpha-build red overlay with a dedicated fireball sprite + flame trail for Big Bomb flights. See `ui-hud-layout.md` Section 11.
 - [ ] Handedness Configuration — Settings toggle to move the angle slider to the right edge and mirror the steer budget meter. See `ui-hud-layout.md` Section 11.
 
+## Gameplay Features
+
+- [ ] Bomb Mode Button — A red button on the HUD that the player presses before launching to activate "bomb mode" for a powered-up kick. Visual feedback on press, zooms the ball on launch.
+- [ ] Ball Catcher NPC — A person standing in the middle of the intersection who can catch the ball. Acts as a target or obstacle in the play area.
+
+## Bug Fixes
+
+- [ ] Pause button hides entire HUD — Pressing pause causes all HUD elements to disappear with nothing replacing them. Should show a pause overlay/menu instead.
+
+## Art / Level Design
+
+- [ ] Separate buildings from background — Extract buildings into separate layers from `background.jpg`. Keep roads in place. The road going straight back should curve right. The upper-right sidewalk continues straight and intersects with the curved road in the back. The horizon sits just behind the curved road with some grass and/or sidewalk. Separate land from sky for future sky replacement.
+- [ ] Flatten front-left hill — Remove the hill in the front-left of the scene and replace it with flat grass.
+
 ## Pending (Carried Over)
 
 - [ ] Update README.md — Reflect current mechanics (three-input model, 2-axis steer, diminishing returns, ball shadow), add references to all spec documents including `input-system.md`, `physics-and-tuning.md`, `state-machine.md`, and `CLAUDE.md`

@@ -131,7 +131,7 @@ class InputSystem(
         val rawForwardRatio = cos(launchAngleRad)
         val forwardRatio = 0.40f + rawForwardRatio * 0.12f  // maps ~[0.09..0.98] to ~[0.41..0.52]
         val forwardSpeed = totalSpeed * forwardRatio
-        val deviation = flickResult.direction - (Math.PI.toFloat() / 2f)
+        val deviation = (Math.PI.toFloat() / 2f) - flickResult.direction
         val vx = forwardSpeed * sin(deviation)
         val vy = forwardSpeed * cos(deviation)
         val vz = totalSpeed * sin(launchAngleRad)
