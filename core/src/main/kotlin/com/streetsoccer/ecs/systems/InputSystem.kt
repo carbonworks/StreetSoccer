@@ -181,7 +181,7 @@ class InputSystem(
         activeBallEntity = ballEntity
 
         Gdx.app.log(TAG, "Ball spawned: vx=$vx, vy=$vy, vz=$vz, power=${flickResult.power}, " +
-                "direction=${flickResult.direction}, launchAngle=${Math.toDegrees(launchAngleRad.toDouble())}°")
+                "slider=${flickResult.sliderValue}, launchAngle=${Math.toDegrees(launchAngleRad.toDouble())}°")
 
         // --- Create ball shadow entity ---
         createShadowEntity(engine)

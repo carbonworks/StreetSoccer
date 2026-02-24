@@ -2,7 +2,7 @@ package com.streetsoccer.physics
 
 object TuningConstants {
     const val PPM = 100f // Pixels Per Meter (Box2D conversion)
-    const val GRAVITY = 980f // px/s^2
+    const val GRAVITY = 350f // px/s^2 — tuned for visible arc across ~60% of screen
     const val MAX_KICK_SPEED = 700f // px/s
     const val DRAG = 0.8f // /s — moderate deceleration
     const val MAGNUS_COEFFICIENT = 0.0003f
@@ -11,7 +11,7 @@ object TuningConstants {
     const val MIN_FLICK_SPEED = 300f // px/s
     const val MAX_FLICK_SPEED = 2000f // px/s
     const val MIN_ANGLE = 10f // degrees
-    const val MAX_ANGLE = 75f // degrees
+    const val MAX_ANGLE = 85f // degrees
     const val BIG_BOMB_POWER_THRESHOLD = 0.9f
     const val BIG_BOMB_SLIDER_THRESHOLD = 0.7f
     const val FIXED_TIMESTEP = 1f / 60f // s

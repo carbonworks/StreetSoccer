@@ -16,8 +16,8 @@ class InputRouter(
     private var sliderPointerId: Int = -1
     private var flickPointerId: Int = -1
 
-    // Zone constant
-    private val SLIDER_RAIL_WIDTH = 80f
+    // Zone constant — percentage of screen width for slider touch area
+    private val SLIDER_ZONE_FRACTION = 0.10f // 10% of screen width
 
     // --- Result buffers polled by InputSystem each frame ---
 
@@ -74,7 +74,8 @@ class InputRouter(
 
         // 2. READY or AIMING -> Slider Rail vs Play Area
         if (state is GameState.Ready || state is GameState.Aiming) {
-            if (screenX <= SLIDER_RAIL_WIDTH) { // Assuming left-aligned slider for now
+            val sliderZoneWidth = com.badlogic.gdx.Gdx.graphics.width * SLIDER_ZONE_FRACTION
+            if (screenX <= sliderZoneWidth) {
                 if (sliderPointerId == -1) {
                     sliderPointerId = pointer
                     angleSliderController.updateValue(screenY.toFloat(), com.badlogic.gdx.Gdx.graphics.height.toFloat())
