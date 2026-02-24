@@ -132,6 +132,9 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         // 6. Wire HUD inputs from InputRouter
         hudSystem.sliderValue = inputRouter.sliderValue
         hudSystem.steerSwipeCount = inputRouter.steerSwipeCount
+
+        // 7. Wire bomb mode: HudSystem button state -> InputSystem override flag
+        inputSystem.bombModeOverride = hudSystem.isBombModeActive
     }
 
     /**
