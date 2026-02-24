@@ -271,8 +271,20 @@ class HudSystem(
     override fun update(deltaTime: Float) {
         val state = gameStateManager.currentState
 
-        // Hide all HUD during PAUSED state (from technical-architecture.md Section 9)
-        if (state is GameState.Paused) {
+        // Determine if we are in a gameplay state (including PAUSED, which freezes gameplay).
+        // During PAUSED, the HUD stays visible behind the pause overlay so the player
+        // can still see the game state. The PauseOverlay itself is managed by LevelScreen.
+        val prePauseState = if (state is GameState.Paused) {
+            (state as GameState.Paused).previousState
+        } else {
+            null
+        }
+
+        val isGameplay = state is GameState.Ready || state is GameState.Aiming ||
+                state is GameState.BallInFlight || state is GameState.Scoring ||
+                state is GameState.ImpactMissed || state is GameState.Paused
+
+        if (!isGameplay) {
             stage.root.isVisible = false
             stage.act(deltaTime)
             stage.draw()
@@ -281,13 +293,11 @@ class HudSystem(
 
         stage.root.isVisible = true
 
-        // Only show HUD during gameplay states
-        val isGameplay = state is GameState.Ready || state is GameState.Aiming ||
-                state is GameState.BallInFlight || state is GameState.Scoring ||
-                state is GameState.ImpactMissed
-
-        if (!isGameplay) {
-            stage.root.isVisible = false
+        // When paused, render the HUD in its frozen state but skip data updates
+        // so score/streak/slider don't change while paused.
+        if (state is GameState.Paused) {
+            // Keep existing HUD element visibility based on the pre-pause state
+            updateVisibilityForState(prePauseState)
             stage.act(deltaTime)
             stage.draw()
             return
@@ -409,6 +419,25 @@ class HudSystem(
             streak == 4 -> 3
             else -> 4
         }
+    }
+
+    /**
+     * Set HUD element visibility based on a given state without updating data.
+     * Used during PAUSED to freeze the HUD in its pre-pause visual state.
+     */
+    private fun updateVisibilityForState(state: GameState?) {
+        if (state == null) return
+        val showSlider = state is GameState.Ready || state is GameState.Aiming
+        sliderRail.isVisible = showSlider
+        sliderThumb.isVisible = showSlider
+        angleLabel.isVisible = showSlider
+
+        val showMeter = state is GameState.BallInFlight
+        for (segment in steerMeterSegments) {
+            segment.isVisible = showMeter
+        }
+
+        pauseIcon.isVisible = true
     }
 
     /**
