@@ -118,18 +118,19 @@ class InputSystem(
         }
 
         // Compute initial velocity from FlickResult.
-        // The launch angle slider splits kick energy between forward (vy) and upward (vz):
-        //   totalSpeed = power * MAX_KICK_SPEED
-        //   vy (forward/depth) = totalSpeed * cos(launchAngle)
-        //   vz (upward arc)    = totalSpeed * sin(launchAngle)
-        // So a low angle = fast & flat, high angle = slow & steep arc.
-        // Flick direction adds lateral deviation to vy/vx split.
+        // The launch angle slider splits kick energy between forward (vy) and upward (vz).
+        // We use a softened forward ratio so that:
+        //   - Low angles still have some upward arc (not 98% forward)
+        //   - High angles still travel forward meaningfully (not 9% forward)
+        // Forward ratio is clamped to [0.30, 0.75] range from the raw cos(angle).
         val totalSpeed = flickResult.power * TuningConstants.MAX_KICK_SPEED
         val launchAngleRad = Math.toRadians(
             (TuningConstants.MIN_ANGLE + flickResult.sliderValue * (TuningConstants.MAX_ANGLE - TuningConstants.MIN_ANGLE)).toDouble()
         ).toFloat()
 
-        val forwardSpeed = totalSpeed * cos(launchAngleRad)
+        val rawForwardRatio = cos(launchAngleRad)
+        val forwardRatio = 0.40f + rawForwardRatio * 0.12f  // maps ~[0.09..0.98] to ~[0.41..0.52]
+        val forwardSpeed = totalSpeed * forwardRatio
         val deviation = flickResult.direction - (Math.PI.toFloat() / 2f)
         val vx = forwardSpeed * sin(deviation)
         val vy = forwardSpeed * cos(deviation)

@@ -2,7 +2,7 @@ package com.streetsoccer.physics
 
 object TuningConstants {
     const val PPM = 100f // Pixels Per Meter (Box2D conversion)
-    const val GRAVITY = 200f // px/s^2 — tuned for tall, visible arcs
+    const val GRAVITY = 98f // px/s^2 — tuned for tall, visible arcs
     const val MAX_KICK_SPEED = 700f // px/s
     const val DRAG = 0.8f // /s — moderate deceleration
     const val MAGNUS_COEFFICIENT = 0.0003f
