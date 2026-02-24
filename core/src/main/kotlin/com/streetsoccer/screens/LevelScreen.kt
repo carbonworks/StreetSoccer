@@ -18,6 +18,7 @@ import com.streetsoccer.ecs.systems.InputSystem
 import com.streetsoccer.ecs.systems.PhysicsSystem
 import com.streetsoccer.ecs.systems.RenderSystem
 import com.streetsoccer.ecs.systems.SpawnSystem
+import com.streetsoccer.ecs.systems.TrajectorySystem
 import com.streetsoccer.input.InputRouter
 import com.streetsoccer.physics.PhysicsContactListener
 import com.streetsoccer.physics.TuningConstants
@@ -64,6 +65,12 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     private val spawnSystem = SpawnSystem(gameStateManager)
     private val inputSystem = InputSystem(inputRouter, gameStateManager, world)
     private val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
+    private val trajectorySystem = TrajectorySystem(
+        inputRouter, gameStateManager, { viewport.camera.combined }
+    ).apply {
+        // Load setting from SaveService; defaults to false if no settings file exists
+        trajectoryPreviewEnabled = game.saveService.loadSettings().trajectoryPreviewEnabled
+    }
 
     override fun show() {
         Gdx.app.log("LevelScreen", "show")
@@ -75,6 +82,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         engine.addSystem(spawnSystem)
         engine.addSystem(inputSystem)
         engine.addSystem(hudSystem)
+        engine.addSystem(trajectorySystem)
 
         // Set up input multiplexer: HUD stage first (for pause icon taps),
         // then InputRouter (for gameplay gestures)
@@ -170,6 +178,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         Gdx.app.log("LevelScreen", "dispose")
         renderSystem.dispose()
         hudSystem.dispose()
+        trajectorySystem.dispose()
         batch.dispose()
         world.dispose()
     }
