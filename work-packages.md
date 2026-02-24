@@ -14,7 +14,221 @@ This file defines independent work packages for parallel agent development. Each
 
 ---
 
-## WP-0: LevelScreen Game Loop Skeleton — FOUNDATION
+## Pipeline
+
+1. Backlog items are prioritized in `backlog.md` (top = highest priority)
+2. Take the highest-priority unassigned items from the backlog
+3. Group them into a wave based on file ownership — items that don't
+   conflict on owned files can run in the same wave
+4. Each item becomes a WP with Owns/Reads/Touches/Depends-on
+5. Each WP runs as its own worktree subagent
+6. Each WP merges independently when done (own branch, own commit)
+7. After all WPs in a wave merge, define the next wave from backlog
+
+---
+
+## Wave 3 (Done)
+
+### WP-10: Pause Overlay Menu
+
+**Status:** done
+**Backlog item:** #1 — Pause overlay menu (bug)
+**Owns:** `HudSystem.kt` (pause overlay logic), new `PauseOverlay.kt`
+**Reads:** `state-machine.md`, `ui-hud-layout.md`, `menu-and-navigation-flow.md`
+**Touches:** `LevelScreen.kt` (wire overlay into screen), `GameStateManager.kt` (pause/resume calls)
+**Depends on:** none (WP-0–9 done)
+
+**Scope:**
+1. Create `PauseOverlay.kt` — a Scene2D overlay with Resume and Quit buttons
+2. In `HudSystem.kt`, replace the current pause-hides-everything behavior:
+   - Pause tap → `GameStateManager.transitionTo(PAUSED)` + show PauseOverlay
+   - Resume tap → `GameStateManager.transitionTo(previousState)` + hide overlay
+   - Quit → save session and return to AttractScreen
+3. Wire the overlay into `LevelScreen` so it renders above the game
+4. Android back button during gameplay triggers pause (per `menu-and-navigation-flow.md`)
+
+**Acceptance:** Pressing pause shows an overlay with Resume/Quit. HUD elements remain visible (dimmed or behind overlay). Resume returns to prior state. Quit saves and exits to attract screen.
+
+---
+
+### WP-11: Save Session Integration
+
+**Status:** done
+**Backlog item:** #2 — Save session integration (integration)
+**Owns:** `GameBootstrapper.kt` (lifecycle hooks)
+**Reads:** `save-and-persistence.md`, `state-machine.md`
+**Touches:** `LevelScreen.kt` (save on hide/pause), `Services.kt` (mergeInto call)
+**Depends on:** none (WP-0–9 done)
+
+**Scope:**
+1. Wire `SaveService` session lifecycle into the game loop:
+   - On session start (LevelScreen show): begin new session accumulator
+   - On session end (quit to attract, app backgrounded): merge session stats into career via `ProfileData.mergeInto()`
+   - On pause: save current state
+2. In `GameBootstrapper`, add `dispose()` hook to flush pending saves
+3. Load profile on app start, apply settings
+
+**Acceptance:** Session scores accumulate into career stats. Data persists across app restart. Backgrounding the app triggers a save. Corrupted save file recovers gracefully.
+
+---
+
+### WP-12: Settings Overlay (Functional)
+
+**Status:** done
+**Backlog item:** #3 — Settings overlay (functional) (feature)
+**Owns:** `AttractScreen.kt` (settings panel replacement)
+**Reads:** `menu-and-navigation-flow.md`, `save-and-persistence.md`, `ui-hud-layout.md`
+**Touches:** `Services.kt` (SettingsData getters/setters)
+**Depends on:** none (WP-0–9 done)
+
+**Scope:**
+1. Replace the placeholder settings panel in `AttractScreen` with functional controls:
+   - Trajectory preview toggle (on/off)
+   - Slider side toggle (left/right) — UI only, handedness logic is a later WP
+   - Music volume slider
+   - SFX volume slider
+2. Wire controls to `SettingsData` via `SaveService`
+3. Changes save immediately (no "Apply" button needed)
+4. Android back button closes the settings overlay
+
+**Acceptance:** Settings panel shows real controls. Toggling/sliding updates SettingsData. Values persist after closing and reopening settings. Back button dismisses overlay.
+
+---
+
+### WP-13: Audio Implementation
+
+**Status:** done
+**Backlog item:** #5 — Audio implementation (feature)
+**Owns:** new `AudioServiceImpl.kt`, new audio placeholder assets
+**Reads:** `game-design-document.md` (Section 9), `save-and-persistence.md` (volume settings)
+**Touches:** `Services.kt` (replace NoopAudioService), `CollisionSystem.kt` (play sounds on hit), `GameBootstrapper.kt` (init AudioServiceImpl)
+**Depends on:** none (WP-0–9 done)
+
+**Scope:**
+1. Create `AudioServiceImpl` implementing the existing `AudioService` interface
+2. Generate or source placeholder sound files (short beeps/clicks) for each of the ~12 GDD Section 9 cues:
+   - Kick launch (bass boom), glass-break, metallic clang, car alarm, whoosh (flight), bounce, miss, streak milestone, Big Bomb activation, score popup, UI tap
+3. Wire into `CollisionSystem`: play appropriate sound on target hit vs. wall hit
+4. Wire into ball launch: play kick sound
+5. Respect `SettingsData.sfxVolume` and `musicVolume`
+6. Replace `NoopAudioService` registration in `Services.kt` / `GameBootstrapper.kt`
+
+**Acceptance:** Sound effects play on kick, hit, and miss. Volume settings are respected. NoopAudioService is fully replaced. Placeholder sounds are clearly temporary but functional.
+
+---
+
+### WP-14: Ball Catcher NPC
+
+**Status:** done
+**Backlog item:** #7 — Ball Catcher NPC (gameplay)
+**Owns:** new `CatcherComponent.kt`, new `CatcherSystem.kt`
+**Reads:** `environment-z-depth-and-collosion.md`, `technical-architecture.md` (Section 4), `physics-and-tuning.md`
+**Touches:** `CollisionSystem.kt` (catch handling branch), `LevelScreen.kt` (register CatcherSystem), `suburban-crossroads.json` (add catcher spawn point)
+**Depends on:** none (WP-0–9 done)
+
+**Scope:**
+1. Create `CatcherComponent` — marks an entity as a ball catcher with position and catch radius
+2. Create `CatcherSystem` — handles catcher idle animation and catch detection
+3. Add a catcher spawn point to `suburban-crossroads.json` (center of intersection)
+4. In `CollisionSystem`, add a branch: if ball contacts catcher entity, trigger a "caught" outcome (distinct from target hit or wall miss)
+5. Create a placeholder SVG for the catcher character
+6. Catcher stands in place (no movement for now)
+
+**Acceptance:** A catcher NPC appears in the intersection. Ball contacting catcher triggers a catch event. Catch is visually and mechanically distinct from a target hit or wall miss.
+
+---
+
+## Wave 4 (Next)
+
+### WP-15: Stats Overlay (Live Data)
+
+**Status:** ready
+**Backlog item:** #4 — Stats overlay (live data)
+**Owns:** `AttractScreen.kt` (stats panel replacement)
+**Reads:** `menu-and-navigation-flow.md`, `save-and-persistence.md`
+**Touches:** `Services.kt` (ProfileData getters)
+**Depends on:** none (Wave 3 done)
+
+**Scope:**
+Replace the placeholder stats panel in AttractScreen with live ProfileData display: career score, best streak, best session score, total kicks, targets by type breakdown.
+
+---
+
+### WP-16: Bomb Mode Button
+
+**Status:** ready
+**Backlog item:** #6 — Bomb Mode Button
+**Owns:** `HudSystem.kt` (bomb button), `InputSystem.kt` (bomb mode flag)
+**Reads:** `ui-hud-layout.md`, `input-system.md`, `physics-and-tuning.md`
+**Touches:** `LevelScreen.kt` (register bomb mode)
+**Depends on:** none (Wave 3 done)
+
+**Scope:**
+Add a red "bomb mode" button to the HUD. Player presses it before launching to activate powered-up kick. Visual feedback on press, zoom effect on ball launch.
+
+---
+
+### WP-17: Trajectory Preview Rendering
+
+**Status:** ready
+**Backlog item:** #8 — Trajectory preview rendering
+**Owns:** new `TrajectorySystem.kt`
+**Reads:** `physics-and-tuning.md`, `ui-hud-layout.md`
+**Touches:** `RenderSystem.kt` (draw preview arc), `LevelScreen.kt` (register system), `HudSystem.kt` (toggle UI)
+**Depends on:** none (Wave 3 done)
+
+**Scope:**
+Toggleable dotted arc showing predicted ball path during AIMING state. Updates in real-time as angle slider and power change. Respects trajectoryPreviewEnabled setting.
+
+---
+
+### WP-18: Separate Buildings from Background
+
+**Status:** ready
+**Backlog item:** #10 — Separate buildings from background
+**Owns:** new layered background assets
+**Reads:** `environment-z-depth-and-collosion.md`
+**Touches:** `LevelScreen.kt` (multi-layer background rendering), `RenderSystem.kt` (layer ordering)
+**Depends on:** none (Wave 3 done)
+
+**Scope:**
+Extract buildings into separate image layers from `background.jpg`. Keep roads in place. Curve the back road right. Separate land from sky for future sky replacement.
+
+---
+
+### WP-19: Flatten Front-Left Hill
+
+**Status:** ready
+**Backlog item:** #11 — Flatten front-left hill
+**Owns:** modified background asset(s)
+**Reads:** none
+**Touches:** none
+**Depends on:** none (Wave 3 done)
+
+**Scope:**
+Remove the hill in the front-left of the scene and replace it with flat grass. Asset-only change.
+
+---
+
+## Wave 4 Conflict Check
+
+- AttractScreen: only WP-15
+- HudSystem: only WP-16
+- InputSystem: only WP-16
+- RenderSystem: WP-17 touches, WP-18 touches — different code paths (preview arc vs. layer ordering), acceptable
+- LevelScreen: WP-16, WP-17, WP-18 all touch — additive registrations, acceptable
+- Art assets: WP-18 and WP-19 both modify background layers but WP-19 is asset-only with no code overlap
+
+**Excluded from Wave 4:** Big Bomb meteor feedback (conflicts with WP-17 on RenderSystem), Cosmetic system (too broad, conflicts with many files)
+
+---
+
+## Completed Work Packages
+
+<details>
+<summary>Wave 1 & Wave 2 — WP-0 through WP-9 (all done)</summary>
+
+### WP-0: LevelScreen Game Loop Skeleton — FOUNDATION
 
 **Status:** done
 **Owns:** `LevelScreen.kt`
@@ -33,13 +247,11 @@ Wire up `LevelScreen` as the core gameplay screen per tech-arch Section 3 and 7:
 7. Add `dispose()` cleanup for batch, stage, world
 8. In `GameBootstrapper.create()`: initialize `KtxAsync`, create `SaveService` and `NoopAudioService` instances
 
-**Why this is first:** Every other gameplay package needs LevelScreen to exist as the integration point. Systems are registered here, so agents working on individual systems know the interface contract.
-
 **Acceptance:** LevelScreen compiles with all systems registered (even though most systems are stubs). The game loop structure matches the tech-arch pseudocode. Desktop launcher reaches LevelScreen via touch-through from Loading → Attract → Level.
 
 ---
 
-## WP-1: GameStateManager — State Transitions & Timers
+### WP-1: GameStateManager — State Transitions & Timers
 
 **Status:** done
 **Owns:** `GameStateManager.kt`
@@ -59,7 +271,7 @@ Implement full state machine logic:
 
 ---
 
-## WP-2: CollisionSystem — Contact Routing & State Triggers
+### WP-2: CollisionSystem — Contact Routing & State Triggers
 
 **Status:** done
 **Owns:** `CollisionSystem.kt`
@@ -79,7 +291,7 @@ Implement full state machine logic:
 
 ---
 
-## WP-3: SpawnSystem — Moving Target Lifecycle
+### WP-3: SpawnSystem — Moving Target Lifecycle
 
 **Status:** done
 **Owns:** `SpawnSystem.kt`
@@ -98,7 +310,7 @@ Implement full state machine logic:
 
 ---
 
-## WP-4: InputSystem Bridge — Flick-to-Ball & Steer-to-Spin
+### WP-4: InputSystem Bridge — Flick-to-Ball & Steer-to-Spin
 
 **Status:** done
 **Owns:** `InputSystem.kt`
@@ -118,10 +330,10 @@ Implement full state machine logic:
 
 ---
 
-## WP-5: HUD System — Score, Streak, Steer Meter
+### WP-5: HUD System — Score, Streak, Steer Meter
 
 **Status:** done
-**Owns:** new file `core/.../ecs/systems/HudSystem.kt`
+**Owns:** `HudSystem.kt`
 **Reads:** `ui-hud-layout.md`, `technical-architecture.md` (Section 8), `GameStateManager.kt`
 **Touches:** none
 
@@ -140,7 +352,7 @@ Implement full state machine logic:
 
 ---
 
-## WP-6: LoadingScreen + Asset Pipeline
+### WP-6: LoadingScreen + Asset Pipeline
 
 **Status:** done
 **Owns:** `LoadingScreen.kt`
@@ -159,7 +371,7 @@ Implement full state machine logic:
 
 ---
 
-## WP-7: AttractScreen + Menu Overlays
+### WP-7: AttractScreen + Menu Overlays
 
 **Status:** done
 **Owns:** `AttractScreen.kt`
@@ -179,7 +391,7 @@ Implement full state machine logic:
 
 ---
 
-## WP-8: SaveService Expansion
+### WP-8: SaveService Expansion
 
 **Status:** done
 **Owns:** `Services.kt`
@@ -198,10 +410,10 @@ Implement full state machine logic:
 
 ---
 
-## WP-9: Ball Shadow Rendering
+### WP-9: Ball Shadow Rendering
 
 **Status:** done
-**Owns:** new file `core/.../ecs/components/BallShadowComponent.kt` (optional — could use tag on existing entity)
+**Owns:** `BallShadowComponent.kt`
 **Reads:** `environment-z-depth-and-collosion.md`, `physics-and-tuning.md`, `technical-architecture.md` (Section 8)
 **Touches:** `RenderSystem.kt` (add shadow drawing before ball sprite)
 
@@ -216,7 +428,7 @@ Implement full state machine logic:
 
 ---
 
-## Dependency Graph
+### Waves 1–2 Dependency Graph
 
 ```
 WP-0 (LevelScreen skeleton)  ──┬──> WP-1 (GameStateManager)
@@ -232,14 +444,4 @@ Independent (no dependencies):
   WP-8 (SaveService)
 ```
 
-## Recommended Execution Order
-
-**Wave 1** (can all run in parallel):
-- WP-0, WP-6, WP-7, WP-8
-
-**Wave 2** (after WP-0 is merged; can all run in parallel):
-- WP-1, WP-2, WP-3, WP-4, WP-5, WP-9
-
-**Wave 3** (integration):
-- Merge all Wave 2 branches, resolve conflicts in LevelScreen.kt if any
-- Integration testing — verify the full loop works end-to-end
+</details>
