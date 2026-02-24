@@ -1,5 +1,10 @@
 plugins {
     kotlin("jvm")
+    application
+}
+
+application {
+    mainClass.set("com.streetsoccer.desktop.DesktopLauncher")
 }
 
 val gdxVersion: String by rootProject.extra

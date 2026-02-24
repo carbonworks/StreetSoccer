@@ -38,11 +38,6 @@ class GameBootstrapper : KtxGame<KtxScreen>() {
 
         // Create shared services
         saveService = SaveService()
-        val settings = saveService.loadSettings()
-        audioService = AudioServiceImpl(
-            initialMasterVolume = settings.masterVolume,
-            initialSfxVolume = settings.sfxVolume
-        )
         assets = AssetManager()
 
         // Load persisted data (gracefully falls back to defaults on missing/corrupt files)
@@ -50,6 +45,12 @@ class GameBootstrapper : KtxGame<KtxScreen>() {
         settings = saveService.loadSettings()
         Gdx.app.log("GameBootstrapper", "Profile loaded: totalKicks=${profile.career.totalKicks}, totalScore=${profile.career.totalScore}")
         Gdx.app.log("GameBootstrapper", "Settings loaded: trajectoryPreview=${settings.trajectoryPreviewEnabled}, sliderSide=${settings.sliderSide}")
+
+        // Init audio with loaded volume settings
+        audioService = AudioServiceImpl(
+            initialMasterVolume = settings.masterVolume,
+            initialSfxVolume = settings.sfxVolume
+        )
 
         addScreen(LoadingScreen(this))
         addScreen(AttractScreen(this))
