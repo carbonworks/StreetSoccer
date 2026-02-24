@@ -117,26 +117,23 @@ class InputSystem(
             Gdx.app.log(TAG, "Big Bomb activated! power=${flickResult.power}, slider=${flickResult.sliderValue}")
         }
 
-        // Compute initial velocity from FlickResult per physics-and-tuning.md Section 2:
-        //   horizontalSpeed = power * MAX_KICK_SPEED
-        //   vx = horizontal lateral component (from flick direction deviation)
-        //   vy = depth into scene (primary forward component)
-        //   vz = vertical arc (from launch angle slider)
-        //
-        // FlickDetector returns direction as atan2(dy, dx) where straight-up = π/2.
-        // We need to convert so that a straight-up flick maps primarily to +vy (depth).
-        // Subtract π/2 so straight-up becomes 0, then:
-        //   vx = horizontalSpeed * sin(deviation)  -- lateral (0 for straight flick)
-        //   vy = horizontalSpeed * cos(deviation)  -- depth (max for straight flick)
-        val horizontalSpeed = flickResult.power * TuningConstants.MAX_KICK_SPEED
+        // Compute initial velocity from FlickResult.
+        // The launch angle slider splits kick energy between forward (vy) and upward (vz):
+        //   totalSpeed = power * MAX_KICK_SPEED
+        //   vy (forward/depth) = totalSpeed * cos(launchAngle)
+        //   vz (upward arc)    = totalSpeed * sin(launchAngle)
+        // So a low angle = fast & flat, high angle = slow & steep arc.
+        // Flick direction adds lateral deviation to vy/vx split.
+        val totalSpeed = flickResult.power * TuningConstants.MAX_KICK_SPEED
         val launchAngleRad = Math.toRadians(
             (TuningConstants.MIN_ANGLE + flickResult.sliderValue * (TuningConstants.MAX_ANGLE - TuningConstants.MIN_ANGLE)).toDouble()
         ).toFloat()
 
+        val forwardSpeed = totalSpeed * cos(launchAngleRad)
         val deviation = flickResult.direction - (Math.PI.toFloat() / 2f)
-        val vx = horizontalSpeed * sin(deviation)
-        val vy = horizontalSpeed * cos(deviation)
-        val vz = horizontalSpeed * sin(launchAngleRad)
+        val vx = forwardSpeed * sin(deviation)
+        val vy = forwardSpeed * cos(deviation)
+        val vz = totalSpeed * sin(launchAngleRad)
 
         // --- Create ball entity ---
         val ballEntity = engine.createEntity()
