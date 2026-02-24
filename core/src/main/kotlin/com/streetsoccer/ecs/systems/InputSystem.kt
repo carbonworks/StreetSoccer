@@ -128,7 +128,6 @@ class InputSystem(
         // We use a softened forward ratio so that:
         //   - Low angles still have some upward arc (not 98% forward)
         //   - High angles still travel forward meaningfully (not 9% forward)
-        // Forward ratio is clamped to [0.30, 0.75] range from the raw cos(angle).
         val totalSpeed = flickResult.power * TuningConstants.MAX_KICK_SPEED
         val launchAngleRad = Math.toRadians(
             (TuningConstants.MIN_ANGLE + flickResult.sliderValue * (TuningConstants.MAX_ANGLE - TuningConstants.MIN_ANGLE)).toDouble()
@@ -137,9 +136,12 @@ class InputSystem(
         val rawForwardRatio = cos(launchAngleRad)
         val forwardRatio = 0.40f + rawForwardRatio * 0.12f  // maps ~[0.09..0.98] to ~[0.41..0.52]
         val forwardSpeed = totalSpeed * forwardRatio
-        val deviation = (Math.PI.toFloat() / 2f) - flickResult.direction
-        val vx = forwardSpeed * sin(deviation)
-        val vy = forwardSpeed * cos(deviation)
+        // direction = atan2(dy, dx) where dy is the upward screen component.
+        // A straight-up flick gives direction ≈ PI/2.
+        // Standard trig: x-component = cos(θ), y-component = sin(θ).
+        // vx = lateral (screen-x), vy = depth (into scene / screen-y).
+        val vx = forwardSpeed * cos(flickResult.direction)
+        val vy = forwardSpeed * sin(flickResult.direction)
         val vz = totalSpeed * sin(launchAngleRad)
 
         // --- Create ball entity ---
