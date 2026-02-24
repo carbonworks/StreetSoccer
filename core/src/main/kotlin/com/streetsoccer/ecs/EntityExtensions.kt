@@ -13,6 +13,7 @@ val colliderCmpMapper = mapperFor<ColliderComponent>()
 val spawnLaneCmpMapper = mapperFor<SpawnLaneComponent>()
 val targetCmpMapper = mapperFor<TargetComponent>()
 val ballShadowCmpMapper = mapperFor<BallShadowComponent>()
+val catcherCmpMapper = mapperFor<CatcherComponent>()
 
 val Entity.transform: TransformComponent
     get() = transformCmpMapper.get(this)
@@ -37,3 +38,6 @@ val Entity.target: TargetComponent
 
 val Entity.ballShadow: BallShadowComponent
     get() = ballShadowCmpMapper.get(this)
+
+val Entity.catcher: CatcherComponent
+    get() = catcherCmpMapper.get(this)

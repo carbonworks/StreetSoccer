@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120">
+    <!-- Placeholder catcher/goalkeeper NPC -->
+    <!-- Head -->
+    <circle cx="50" cy="18" r="16" fill="#f0c8a0"/>
+    <!-- Cap/hat brim -->
+    <rect x="30" y="6" width="40" height="8" rx="3" fill="#2c3e50"/>
+    <rect x="34" y="2" width="32" height="8" rx="4" fill="#2c3e50"/>
+    <!-- Body (goalkeeper jersey - bright green to stand out) -->
+    <rect x="30" y="36" width="40" height="38" rx="6" fill="#27ae60"/>
+    <!-- Jersey number -->
+    <text x="50" y="62" text-anchor="middle" font-size="20" font-weight="bold" fill="white" font-family="sans-serif">1</text>
+    <!-- Arms (outstretched, ready to catch) -->
+    <rect x="4" y="38" width="26" height="10" rx="5" fill="#27ae60"/>
+    <rect x="70" y="38" width="26" height="10" rx="5" fill="#27ae60"/>
+    <!-- Gloves -->
+    <circle cx="6" cy="43" r="7" fill="#f39c12"/>
+    <circle cx="94" cy="43" r="7" fill="#f39c12"/>
+    <!-- Shorts -->
+    <rect x="32" y="74" width="16" height="16" rx="3" fill="#2c3e50"/>
+    <rect x="52" y="74" width="16" height="16" rx="3" fill="#2c3e50"/>
+    <!-- Legs -->
+    <rect x="34" y="90" width="12" height="20" rx="3" fill="#f0c8a0"/>
+    <rect x="54" y="90" width="12" height="20" rx="3" fill="#f0c8a0"/>
+    <!-- Boots -->
+    <rect x="32" y="108" width="16" height="10" rx="4" fill="#2c3e50"/>
+    <rect x="52" y="108" width="16" height="10" rx="4" fill="#2c3e50"/>
+</svg>

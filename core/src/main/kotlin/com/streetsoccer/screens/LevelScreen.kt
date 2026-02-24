@@ -13,8 +13,11 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.World
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.streetsoccer.GameBootstrapper
+import com.streetsoccer.ecs.components.CatcherComponent
 import com.streetsoccer.ecs.components.ColliderComponent
 import com.streetsoccer.ecs.components.TransformComponent
+import com.streetsoccer.ecs.components.VisualComponent
+import com.streetsoccer.ecs.systems.CatcherSystem
 import com.streetsoccer.ecs.systems.CollisionSystem
 import com.streetsoccer.ecs.systems.HudSystem
 import com.streetsoccer.ecs.systems.InputSystem
@@ -74,6 +77,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     private val spawnSystem = SpawnSystem(gameStateManager)
     private val inputSystem = InputSystem(inputRouter, gameStateManager, world, game.audioService, game.assets)
     private val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
+    private val catcherSystem = CatcherSystem(gameStateManager, engine)
 
     /**
      * Listens for state transitions to automatically show/hide the pause overlay.
@@ -146,6 +150,10 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         engine.addSystem(spawnSystem)
         engine.addSystem(inputSystem)
         engine.addSystem(hudSystem)
+        engine.addSystem(catcherSystem)
+
+        // Create the catcher NPC entity in the intersection
+        createCatcherEntity()
 
         // Create pause overlay with resume/quit callbacks
         pauseOverlay = PauseOverlay(
@@ -258,6 +266,42 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         // game.saveService.mergeSessionAndSave(sessionAccumulator)
         gameStateManager.quit()
         game.setScreen<AttractScreen>()
+    }
+
+    /**
+     * Create the ball catcher NPC entity at the center of the intersection.
+     *
+     * The catcher stands in the middle of the cross-street, positioned to
+     * intercept balls headed toward the deep neighborhood corridor. Position
+     * is derived from the catcher spawn point in suburban-crossroads.json.
+     */
+    private fun createCatcherEntity() {
+        val entity = engine.createEntity()
+
+        val transform = engine.createComponent(TransformComponent::class.java).apply {
+            // Center of intersection — between the player and the deep corridor.
+            // Coordinates from suburban-crossroads.json catcher_spawn_point.
+            x = 960f
+            y = 280f
+            height = 0f
+            screenScale = maxOf(0.05f, (540f - 280f) / 540f)
+        }
+
+        val catcher = engine.createComponent(CatcherComponent::class.java).apply {
+            catchRadius = CatcherComponent.DEFAULT_CATCH_RADIUS
+        }
+
+        val visual = engine.createComponent(VisualComponent::class.java).apply {
+            // Placeholder — texture will be assigned when assets are loaded.
+            // Render on layer 1 (cross-street level) so the catcher appears
+            // at the correct depth in the scene.
+            renderLayer = 1
+        }
+
+        entity.add(transform)
+        entity.add(catcher)
+        entity.add(visual)
+        engine.addEntity(entity)
     }
 
     /**

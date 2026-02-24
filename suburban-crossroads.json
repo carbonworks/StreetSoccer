@@ -72,6 +72,14 @@
     }
   ],
 
+  "catcher_spawn_point": {
+    "id": "intersection_catcher",
+    "x": 960, "y": 280,
+    "catch_radius": 60,
+    "z_layer": 1,
+    "description": "Ball catcher NPC standing in the center of the intersection. Intercepts balls that pass within catch_radius."
+  },
+
   "spawn_lanes": [
     {
       "id": "cross_street_traffic",

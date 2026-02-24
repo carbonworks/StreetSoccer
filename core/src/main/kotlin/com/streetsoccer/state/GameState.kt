@@ -9,5 +9,6 @@ sealed class GameState {
     object BallInFlight : GameState()
     object Scoring : GameState()
     object ImpactMissed : GameState()
+    object Caught : GameState()
     data class Paused(val previousState: GameState) : GameState()
 }
