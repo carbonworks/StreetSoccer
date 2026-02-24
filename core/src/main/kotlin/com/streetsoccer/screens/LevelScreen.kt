@@ -5,6 +5,7 @@ import com.badlogic.ashley.core.Family
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.InputMultiplexer
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.World
@@ -47,6 +48,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     // --- Rendering ---
     private val batch = SpriteBatch()
     private val viewport = FitViewport(1920f, 1080f)
+    private var backgroundTexture: Texture? = null
 
     // --- ECS Engine ---
     private val engine = Engine()
@@ -62,11 +64,16 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     private val collisionSystem = CollisionSystem(contactListener, gameStateManager, sessionAccumulator, engine)
     private val renderSystem = RenderSystem(batch)
     private val spawnSystem = SpawnSystem(gameStateManager)
-    private val inputSystem = InputSystem(inputRouter, gameStateManager, world)
+    private val inputSystem = InputSystem(inputRouter, gameStateManager, world, game.assets)
     private val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
 
     override fun show() {
         Gdx.app.log("LevelScreen", "show")
+
+        // Load background texture from AssetManager
+        if (game.assets.isLoaded("background.jpg")) {
+            backgroundTexture = game.assets.get("background.jpg", Texture::class.java)
+        }
 
         // Register all ECS systems with the engine
         engine.addSystem(physicsSystem)
@@ -89,8 +96,20 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     override fun render(delta: Float) {
         // Clear the screen
-        Gdx.gl.glClearColor(0.3f, 0.3f, 0.3f, 1f)
+        Gdx.gl.glClearColor(0.1f, 0.1f, 0.1f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+
+        // Update projection matrix so batch renders in game-world coordinates
+        viewport.apply()
+        batch.projectionMatrix = viewport.camera.combined
+
+        // Draw level background (reset batch color to avoid tint bleed from RenderSystem)
+        backgroundTexture?.let { bg ->
+            batch.begin()
+            batch.setColor(1f, 1f, 1f, 1f)
+            batch.draw(bg, 0f, 0f, 1920f, 1080f)
+            batch.end()
+        }
 
         // --- Game Loop (per technical-architecture.md Section 7) ---
 

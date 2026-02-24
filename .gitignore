@@ -13,6 +13,7 @@ local.properties
 # Android
 android/build/
 android/libs/
+android/src/main/jniLibs/
 
 # OS
 .DS_Store

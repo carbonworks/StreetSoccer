@@ -39,6 +39,11 @@ class CollisionSystem(
 
         // Half the design resolution height, used for depth multiplier.
         private const val DEPTH_DIVISOR = 540f
+
+        // Ball is considered stopped when total speed drops below this (px/s).
+        private const val STOPPED_SPEED_THRESHOLD = 15f
+        // Ball must be near the ground to count as stopped.
+        private const val STOPPED_HEIGHT_THRESHOLD = 5f
     }
 
     override fun update(deltaTime: Float) {
@@ -61,8 +66,9 @@ class CollisionSystem(
             }
         }
 
-        // No collision resolved — check for out-of-bounds.
+        // No collision resolved — check for out-of-bounds or stopped ball.
         checkOutOfBounds()
+        checkBallStopped()
     }
 
     /**
@@ -141,6 +147,35 @@ class CollisionSystem(
                     ecsEngine.removeEntity(entity)
                 }
                 // Only one ball at a time; stop after finding it.
+                return
+            }
+        }
+    }
+
+    /**
+     * Check whether the ball has come to rest on the ground.
+     * If total speed is negligible and the ball is near ground level, treat as a miss.
+     */
+    private fun checkBallStopped() {
+        if (gameStateManager.currentState !is GameState.BallInFlight) return
+
+        val entities = ecsEngine.entities
+        for (i in 0 until entities.size()) {
+            val entity = entities[i]
+            if (velocityCmpMapper.has(entity)) {
+                val transform = transformCmpMapper.get(entity) ?: continue
+                val velocity = velocityCmpMapper.get(entity) ?: continue
+
+                if (transform.height <= STOPPED_HEIGHT_THRESHOLD) {
+                    val speed = kotlin.math.sqrt(
+                        velocity.vx * velocity.vx + velocity.vy * velocity.vy + velocity.vz * velocity.vz
+                    )
+                    if (speed < STOPPED_SPEED_THRESHOLD) {
+                        sessionAccumulator.breakStreak()
+                        gameStateManager.transitionTo(GameState.ImpactMissed)
+                        ecsEngine.removeEntity(entity)
+                    }
+                }
                 return
             }
         }

@@ -33,24 +33,34 @@ class LoadingScreen(private val game: GameBootstrapper) : KtxScreen {
 
     /**
      * Queue all game assets into the shared AssetManager.
-     *
-     * Currently queues background.jpg (the level background texture).
-     * SVG sprites are not loaded yet — AmanithSVG integration is pending.
-     * When new texture assets are added to assets/, queue them here.
      */
     private fun queueAssets() {
         val assets = game.assets
 
         // Queue the level background image.
-        // This file must exist in the assets/ directory to be loadable.
         if (Gdx.files.internal("background.jpg").exists()) {
             assets.load("background.jpg", Texture::class.java)
         } else {
             Gdx.app.log("LoadingScreen", "background.jpg not found in assets — skipping")
         }
 
-        // Future: queue additional textures, atlases, sounds here.
-        // Example: assets.load("sprites/ball.png", Texture::class.java)
+        // Queue placeholder sprite PNGs.
+        val spriteFiles = listOf(
+            "sprites/ball.png",
+            "sprites/vehicle.png",
+            "sprites/drone.png",
+            "sprites/runner.png",
+            "sprites/window_intact.png",
+            "sprites/window_broken.png",
+            "sprites/glass_particle.png"
+        )
+        for (path in spriteFiles) {
+            if (Gdx.files.internal(path).exists()) {
+                assets.load(path, Texture::class.java)
+            } else {
+                Gdx.app.log("LoadingScreen", "$path not found — skipping")
+            }
+        }
     }
 
     override fun render(delta: Float) {

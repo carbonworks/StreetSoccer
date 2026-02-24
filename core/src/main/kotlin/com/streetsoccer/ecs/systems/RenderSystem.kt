@@ -112,6 +112,8 @@ class RenderSystem(
     override fun update(deltaTime: Float) {
         batch.begin()
         super.update(deltaTime)
+        // Reset batch color so tints from shadows/entities don't bleed into other draws
+        batch.setColor(1f, 1f, 1f, 1f)
         batch.end()
     }
 

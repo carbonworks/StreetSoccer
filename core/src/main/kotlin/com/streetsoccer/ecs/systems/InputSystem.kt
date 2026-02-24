@@ -4,6 +4,9 @@ import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.Entity
 import com.badlogic.ashley.core.EntitySystem
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.assets.AssetManager
+import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.physics.box2d.BodyDef
 import com.badlogic.gdx.physics.box2d.CircleShape
 import com.badlogic.gdx.physics.box2d.FixtureDef
@@ -41,7 +44,8 @@ import kotlin.math.sin
 class InputSystem(
     private val inputRouter: InputRouter,
     private val stateManager: GameStateManager,
-    private val world: World
+    private val world: World,
+    private val assetManager: AssetManager? = null
 ) : EntitySystem() {
 
     companion object {
@@ -115,16 +119,23 @@ class InputSystem(
 
         // Compute initial velocity from FlickResult per physics-and-tuning.md Section 2:
         //   horizontalSpeed = power * MAX_KICK_SPEED
-        //   vx = horizontalSpeed * sin(direction)    -- lateral
-        //   vy = horizontalSpeed * cos(direction)    -- depth (into scene)
-        //   vz = horizontalSpeed * sin(launchAngle)  -- vertical (upward arc)
+        //   vx = horizontal lateral component (from flick direction deviation)
+        //   vy = depth into scene (primary forward component)
+        //   vz = vertical arc (from launch angle slider)
+        //
+        // FlickDetector returns direction as atan2(dy, dx) where straight-up = π/2.
+        // We need to convert so that a straight-up flick maps primarily to +vy (depth).
+        // Subtract π/2 so straight-up becomes 0, then:
+        //   vx = horizontalSpeed * sin(deviation)  -- lateral (0 for straight flick)
+        //   vy = horizontalSpeed * cos(deviation)  -- depth (max for straight flick)
         val horizontalSpeed = flickResult.power * TuningConstants.MAX_KICK_SPEED
         val launchAngleRad = Math.toRadians(
             (TuningConstants.MIN_ANGLE + flickResult.sliderValue * (TuningConstants.MAX_ANGLE - TuningConstants.MIN_ANGLE)).toDouble()
         ).toFloat()
 
-        val vx = horizontalSpeed * sin(flickResult.direction)
-        val vy = horizontalSpeed * cos(flickResult.direction)
+        val deviation = flickResult.direction - (Math.PI.toFloat() / 2f)
+        val vx = horizontalSpeed * sin(deviation)
+        val vy = horizontalSpeed * cos(deviation)
         val vz = horizontalSpeed * sin(launchAngleRad)
 
         // --- Create ball entity ---
@@ -152,9 +163,9 @@ class InputSystem(
         ballEntity.add(spin)
 
         val visual = engine.createComponent(VisualComponent::class.java).apply {
-            // TextureRegion will be set externally (by asset loading / LevelScreen).
-            // For now, leave null — RenderSystem gracefully skips null regions.
-            region = null
+            region = if (assetManager?.isLoaded("sprites/ball.png") == true) {
+                TextureRegion(assetManager.get("sprites/ball.png", Texture::class.java))
+            } else null
             renderLayer = BALL_RENDER_LAYER
             opacity = 1f
         }

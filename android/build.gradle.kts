@@ -30,6 +30,15 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
         }
     }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions.jvmTarget = "17"
 }
 
 dependencies {
@@ -43,11 +52,25 @@ dependencies {
     natives("com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-x86_64")
 }
 
-tasks.register<Copy>("copyAndroidNatives") {
-    from(configurations.getByName("natives").files.map { zipTree(it) })
-    into("src/main/jniLibs/armeabi-v7a")
-    include("*.so")
-    exclude("META-INF/")
+tasks.register("copyAndroidNatives") {
+    doFirst {
+        val jniLibsDir = file("src/main/jniLibs")
+        jniLibsDir.deleteRecursively()
+        configurations.getByName("natives").files.forEach { jar ->
+            val abi = when {
+                jar.name.contains("armeabi-v7a") -> "armeabi-v7a"
+                jar.name.contains("arm64-v8a") -> "arm64-v8a"
+                jar.name.contains("x86_64") -> "x86_64"
+                jar.name.contains("x86") -> "x86"
+                else -> return@forEach
+            }
+            val targetDir = jniLibsDir.resolve(abi)
+            targetDir.mkdirs()
+            zipTree(jar).matching { include("*.so") }.forEach { soFile ->
+                soFile.copyTo(targetDir.resolve(soFile.name), overwrite = true)
+            }
+        }
+    }
 }
 
 tasks.named("preBuild") {
