@@ -16,6 +16,7 @@ import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.streetsoccer.GameBootstrapper
+import com.streetsoccer.services.SettingsData
 import ktx.app.KtxScreen
 
 /**
@@ -26,7 +27,7 @@ import ktx.app.KtxScreen
  * - Game title "STREET SOCCER" at top-center, ~15% from top
  * - "TAP TO PLAY" center of screen with pulsing scale/opacity animation
  * - Bottom icon bar: [Stats] and [Settings] labels at ~48px from bottom
- * - Overlays: Settings and Stats placeholder panels (at most one open at a time)
+ * - Overlays: Settings (functional) and Stats placeholder panels (at most one open)
  */
 class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
 
@@ -60,12 +61,35 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
     private val overlayCloseBounds = Rectangle()
     private val overlayPanelBounds = Rectangle()
 
-    // Overlay panel dimensions
-    private val panelWidth = 600f
-    private val panelHeight = 500f
+    // Overlay panel dimensions — settings panel is taller to hold all controls
+    private val panelWidth = 660f
+    private val settingsPanelHeight = 620f
+    private val statsPanelHeight = 500f
+
+    // --- Settings overlay state ---
+    // In-memory copy of settings, loaded when the overlay opens
+    private var currentSettings = SettingsData()
+
+    // Toggle hit areas (set during draw, used during touch)
+    private val trajectoryToggleBounds = Rectangle()
+    private val sliderSideToggleBounds = Rectangle()
+
+    // Volume slider track areas
+    private val musicSliderBounds = Rectangle()
+    private val sfxSliderBounds = Rectangle()
+
+    // Which slider is currently being dragged (-1 = none, 0 = music, 1 = sfx)
+    private var draggingSlider = -1
 
     // Temporary vector for unprojecting touch coordinates
     private val touchPoint = Vector3()
+
+    // Color constants for the settings UI
+    private val accentGreen = Color(0.3f, 0.85f, 0.4f, 1f)
+    private val dimGray = Color(0.35f, 0.38f, 0.42f, 1f)
+    private val sliderTrackColor = Color(0.3f, 0.33f, 0.37f, 1f)
+    private val sliderFillColor = Color(0.3f, 0.7f, 0.9f, 1f)
+    private val sliderThumbColor = Color.WHITE
 
     private val inputProcessor = object : InputAdapter() {
         override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
@@ -85,6 +109,12 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
                     activeOverlay = Overlay.NONE
                     return true
                 }
+
+                // --- Settings-specific touch handling ---
+                if (activeOverlay == Overlay.SETTINGS) {
+                    if (handleSettingsTouchDown(wx, wy)) return true
+                }
+
                 // Consume taps inside the overlay panel (no pass-through)
                 return true
             }
@@ -95,13 +125,31 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
                 return true
             }
             if (settingsButtonBounds.contains(wx, wy)) {
-                activeOverlay = Overlay.SETTINGS
+                openSettingsOverlay()
                 return true
             }
 
-            // Tap anywhere else → transition to gameplay
+            // Tap anywhere else -> transition to gameplay
             game.setScreen<LevelScreen>()
             return true
+        }
+
+        override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
+            if (activeOverlay == Overlay.SETTINGS && draggingSlider >= 0) {
+                touchPoint.set(screenX.toFloat(), screenY.toFloat(), 0f)
+                viewport.unproject(touchPoint)
+                handleSettingsTouchDrag(touchPoint.x)
+                return true
+            }
+            return false
+        }
+
+        override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+            if (draggingSlider >= 0) {
+                draggingSlider = -1
+                return true
+            }
+            return false
         }
 
         override fun keyDown(keycode: Int): Boolean {
@@ -117,6 +165,80 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
             return false
         }
     }
+
+    // --- Settings Touch Handlers ---
+
+    /** Handle touchDown inside the settings panel. Returns true if a control was hit. */
+    private fun handleSettingsTouchDown(wx: Float, wy: Float): Boolean {
+        // Trajectory preview toggle
+        if (trajectoryToggleBounds.contains(wx, wy)) {
+            currentSettings = currentSettings.copy(
+                trajectoryPreviewEnabled = !currentSettings.trajectoryPreviewEnabled
+            )
+            saveSettings()
+            return true
+        }
+
+        // Slider side toggle
+        if (sliderSideToggleBounds.contains(wx, wy)) {
+            val newSide = if (currentSettings.sliderSide == "left") "right" else "left"
+            currentSettings = currentSettings.copy(sliderSide = newSide)
+            saveSettings()
+            return true
+        }
+
+        // Music volume slider — begin drag
+        if (musicSliderBounds.contains(wx, wy)) {
+            draggingSlider = 0
+            updateSliderValue(wx, musicSliderBounds, isMusic = true)
+            return true
+        }
+
+        // SFX volume slider — begin drag
+        if (sfxSliderBounds.contains(wx, wy)) {
+            draggingSlider = 1
+            updateSliderValue(wx, sfxSliderBounds, isMusic = false)
+            return true
+        }
+
+        return false
+    }
+
+    /** Handle drag on an active slider. */
+    private fun handleSettingsTouchDrag(wx: Float) {
+        when (draggingSlider) {
+            0 -> updateSliderValue(wx, musicSliderBounds, isMusic = true)
+            1 -> updateSliderValue(wx, sfxSliderBounds, isMusic = false)
+        }
+    }
+
+    /** Map a world-x coordinate to a 0..1 value within a slider track and update settings. */
+    private fun updateSliderValue(wx: Float, sliderBounds: Rectangle, isMusic: Boolean) {
+        val ratio = MathUtils.clamp(
+            (wx - sliderBounds.x) / sliderBounds.width,
+            0f, 1f
+        )
+        // Snap to nearest 0.05 for a clean feel
+        val snapped = (ratio * 20f).toInt() / 20f
+        if (isMusic) {
+            currentSettings = currentSettings.copy(masterVolume = snapped)
+        } else {
+            currentSettings = currentSettings.copy(sfxVolume = snapped)
+        }
+        saveSettings()
+    }
+
+    private fun openSettingsOverlay() {
+        // Load current settings from disk so the panel reflects persisted values
+        currentSettings = game.saveService.loadSettings()
+        activeOverlay = Overlay.SETTINGS
+    }
+
+    private fun saveSettings() {
+        game.saveService.saveSettings(currentSettings)
+    }
+
+    // --- Lifecycle ---
 
     override fun show() {
         Gdx.app.log("AttractScreen", "show")
@@ -163,6 +285,7 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
 
     override fun hide() {
         Gdx.input.inputProcessor = null
+        draggingSlider = -1
     }
 
     override fun render(delta: Float) {
@@ -261,6 +384,7 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
     }
 
     private fun drawOverlay() {
+        val panelHeight = if (activeOverlay == Overlay.SETTINGS) settingsPanelHeight else statsPanelHeight
         val panelX = (worldWidth - panelWidth) / 2f
         val panelY = (worldHeight - panelHeight) / 2f
 
@@ -300,11 +424,20 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
         // --- Draw panel content ---
-        batch.begin()
         when (activeOverlay) {
-            Overlay.SETTINGS -> drawSettingsContent(panelX, panelY)
-            Overlay.STATS -> drawStatsContent(panelX, panelY)
-            Overlay.NONE -> { /* unreachable */ }
+            Overlay.SETTINGS -> {
+                drawSettingsControls(panelX, panelY, panelHeight)
+                batch.begin()
+                drawSettingsLabels(panelX, panelY, panelHeight)
+            }
+            Overlay.STATS -> {
+                batch.begin()
+                drawStatsContent(panelX, panelY)
+            }
+            Overlay.NONE -> {
+                batch.begin()
+                /* unreachable */
+            }
         }
 
         // Draw close button [X]
@@ -322,9 +455,150 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
         batch.end()
     }
 
-    private fun drawSettingsContent(panelX: Float, panelY: Float) {
+    // --- Settings Panel: Shape-based controls (toggles, slider tracks) ---
+
+    /**
+     * Draw toggle switches and slider tracks using ShapeRenderer.
+     * Called before batch.begin() so we can use ShapeRenderer freely.
+     */
+    private fun drawSettingsControls(panelX: Float, panelY: Float, panelHeight: Float) {
+        val topY = panelY + panelHeight - 60f
+        val controlRightEdge = panelX + panelWidth - 50f
+
+        // Layout constants for the four rows
+        val rowStartY = topY - 100f
+        val rowSpacing = 110f
+
+        // --- Toggle dimensions ---
+        val toggleWidth = 100f
+        val toggleHeight = 40f
+
+        // --- Row 1: Trajectory Preview toggle ---
+        val row1Y = rowStartY
+        val toggle1X = controlRightEdge - toggleWidth
+        val toggle1Y = row1Y - toggleHeight / 2f - 10f  // vertically center with label
+        trajectoryToggleBounds.set(toggle1X, toggle1Y, toggleWidth, toggleHeight)
+        drawToggleSwitch(toggle1X, toggle1Y, toggleWidth, toggleHeight, currentSettings.trajectoryPreviewEnabled)
+
+        // --- Row 2: Slider Side toggle ---
+        val row2Y = rowStartY - rowSpacing
+        val toggle2X = controlRightEdge - toggleWidth
+        val toggle2Y = row2Y - toggleHeight / 2f - 10f
+        sliderSideToggleBounds.set(toggle2X, toggle2Y, toggleWidth, toggleHeight)
+        val isRight = currentSettings.sliderSide == "right"
+        drawToggleSwitch(toggle2X, toggle2Y, toggleWidth, toggleHeight, isRight)
+
+        // --- Slider dimensions ---
+        val sliderWidth = 300f
+        val sliderHeight = 12f
+        val sliderX = controlRightEdge - sliderWidth
+
+        // --- Row 3: Music Volume slider track ---
+        val row3Y = rowStartY - rowSpacing * 2
+        val slider1Y = row3Y - sliderHeight / 2f - 10f
+        // Expand touch area vertically for easier interaction
+        musicSliderBounds.set(sliderX, slider1Y - 20f, sliderWidth, sliderHeight + 40f)
+        drawSliderTrack(sliderX, slider1Y, sliderWidth, sliderHeight, currentSettings.masterVolume)
+
+        // --- Row 4: SFX Volume slider track ---
+        val row4Y = rowStartY - rowSpacing * 3
+        val slider2Y = row4Y - sliderHeight / 2f - 10f
+        sfxSliderBounds.set(sliderX, slider2Y - 20f, sliderWidth, sliderHeight + 40f)
+        drawSliderTrack(sliderX, slider2Y, sliderWidth, sliderHeight, currentSettings.sfxVolume)
+    }
+
+    /** Draw a toggle switch at the given position. */
+    private fun drawToggleSwitch(x: Float, y: Float, w: Float, h: Float, isOn: Boolean) {
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+
+        val cornerRadius = h / 2f
+
+        // Track background (rounded pill shape approximated with rect + circles)
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.color = if (isOn) accentGreen else dimGray
+        // Center rectangle
+        shapeRenderer.rect(x + cornerRadius, y, w - cornerRadius * 2, h)
+        // Left cap
+        shapeRenderer.arc(x + cornerRadius, y + cornerRadius, cornerRadius, 90f, 180f, 12)
+        // Right cap
+        shapeRenderer.arc(x + w - cornerRadius, y + cornerRadius, cornerRadius, 270f, 180f, 12)
+        shapeRenderer.end()
+
+        // Thumb circle
+        val thumbRadius = h / 2f - 4f
+        val thumbCx = if (isOn) x + w - cornerRadius else x + cornerRadius
+        val thumbCy = y + h / 2f
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.color = sliderThumbColor
+        shapeRenderer.circle(thumbCx, thumbCy, thumbRadius, 16)
+        shapeRenderer.end()
+
+        Gdx.gl.glDisable(GL20.GL_BLEND)
+    }
+
+    /** Draw a horizontal slider track with a filled portion and a thumb circle. */
+    private fun drawSliderTrack(x: Float, y: Float, w: Float, h: Float, value: Float) {
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+
+        val cornerRadius = h / 2f
+        val filledWidth = w * MathUtils.clamp(value, 0f, 1f)
+
+        // Background track (full width)
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.color = sliderTrackColor
+        shapeRenderer.rect(x + cornerRadius, y, w - cornerRadius * 2, h)
+        shapeRenderer.arc(x + cornerRadius, y + cornerRadius, cornerRadius, 90f, 180f, 12)
+        shapeRenderer.arc(x + w - cornerRadius, y + cornerRadius, cornerRadius, 270f, 180f, 12)
+        shapeRenderer.end()
+
+        // Filled portion
+        if (filledWidth > 0f) {
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+            shapeRenderer.color = sliderFillColor
+            if (filledWidth > cornerRadius * 2) {
+                shapeRenderer.rect(x + cornerRadius, y, filledWidth - cornerRadius * 2, h)
+                shapeRenderer.arc(x + cornerRadius, y + cornerRadius, cornerRadius, 90f, 180f, 12)
+                // Right end of filled portion — only draw arc if near full width
+                val rightCapX = x + filledWidth - cornerRadius
+                if (rightCapX > x + cornerRadius) {
+                    shapeRenderer.arc(rightCapX, y + cornerRadius, cornerRadius, 270f, 180f, 12)
+                }
+            } else {
+                // Very small fill — just a small rect
+                shapeRenderer.rect(x, y, filledWidth, h)
+            }
+            shapeRenderer.end()
+        }
+
+        // Thumb circle at the filled position
+        val thumbRadius = h + 6f  // slightly larger than the track height
+        val thumbCx = x + filledWidth
+        val thumbCy = y + h / 2f
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.color = sliderThumbColor
+        shapeRenderer.circle(MathUtils.clamp(thumbCx, x, x + w), thumbCy, thumbRadius, 16)
+        shapeRenderer.end()
+
+        Gdx.gl.glDisable(GL20.GL_BLEND)
+    }
+
+    // --- Settings Panel: Text labels (drawn with SpriteBatch) ---
+
+    /**
+     * Draw the text labels and value readouts for settings controls.
+     * Called inside an active batch.begin()/end() block.
+     */
+    private fun drawSettingsLabels(panelX: Float, panelY: Float, panelHeight: Float) {
         val contentX = panelX + 40f
         val topY = panelY + panelHeight - 60f
+        val controlRightEdge = panelX + panelWidth - 50f
+
+        val rowStartY = topY - 100f
+        val rowSpacing = 110f
 
         // Header
         titleFont.data.setScale(3f)
@@ -333,35 +607,79 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
         titleFont.draw(batch, layout, panelX + (panelWidth - layout.width) / 2f, topY)
         titleFont.data.setScale(5f)
 
-        // Separator line will be drawn as text
+        // Separator
         font.data.setScale(1.5f)
         font.color = Color.GRAY
-        layout.setText(font, "----------------------------")
+        layout.setText(font, "-------------------------------------------")
         font.draw(batch, layout, panelX + (panelWidth - layout.width) / 2f, topY - 40f)
 
-        // Trajectory Preview toggle (placeholder)
         font.data.setScale(2f)
+
+        // --- Row 1: Trajectory Preview ---
         font.color = Color.LIGHT_GRAY
         layout.setText(font, "Trajectory Preview")
-        font.draw(batch, layout, contentX, topY - 100f)
+        font.draw(batch, layout, contentX, rowStartY)
 
-        font.color = Color(0.5f, 0.8f, 0.5f, 1f)
-        layout.setText(font, "[OFF | on]")
-        font.draw(batch, layout, panelX + panelWidth - 220f, topY - 100f)
-
-        // Placeholder note
+        // Status text next to toggle
+        val toggleWidth = 100f
+        val statusText1 = if (currentSettings.trajectoryPreviewEnabled) "ON" else "OFF"
+        font.color = if (currentSettings.trajectoryPreviewEnabled) accentGreen else Color.LIGHT_GRAY
         font.data.setScale(1.5f)
-        font.color = Color.DARK_GRAY
-        layout.setText(font, "(settings placeholder)")
-        font.draw(batch, layout, panelX + (panelWidth - layout.width) / 2f, topY - 200f)
+        layout.setText(font, statusText1)
+        font.draw(batch, layout, controlRightEdge - toggleWidth - layout.width - 16f, rowStartY - 10f)
+        font.data.setScale(2f)
 
+        // --- Row 2: Slider Side ---
+        val row2Y = rowStartY - rowSpacing
+        font.color = Color.LIGHT_GRAY
+        layout.setText(font, "Slider Side")
+        font.draw(batch, layout, contentX, row2Y)
+
+        // Show which side is selected
+        val isRight = currentSettings.sliderSide == "right"
+        val sideLabel = if (isRight) "RIGHT" else "LEFT"
+        font.color = if (isRight) accentGreen else Color.LIGHT_GRAY
+        font.data.setScale(1.5f)
+        layout.setText(font, sideLabel)
+        font.draw(batch, layout, controlRightEdge - toggleWidth - layout.width - 16f, row2Y - 10f)
+        font.data.setScale(2f)
+
+        // --- Row 3: Music Volume ---
+        val row3Y = rowStartY - rowSpacing * 2
+        font.color = Color.LIGHT_GRAY
+        layout.setText(font, "Music Volume")
+        font.draw(batch, layout, contentX, row3Y)
+
+        // Percentage readout
+        val musicPct = (currentSettings.masterVolume * 100f).toInt()
+        font.color = Color.WHITE
+        font.data.setScale(1.5f)
+        layout.setText(font, "$musicPct%")
+        font.draw(batch, layout, contentX, row3Y - 35f)
+        font.data.setScale(2f)
+
+        // --- Row 4: SFX Volume ---
+        val row4Y = rowStartY - rowSpacing * 3
+        font.color = Color.LIGHT_GRAY
+        layout.setText(font, "SFX Volume")
+        font.draw(batch, layout, contentX, row4Y)
+
+        // Percentage readout
+        val sfxPct = (currentSettings.sfxVolume * 100f).toInt()
+        font.color = Color.WHITE
+        font.data.setScale(1.5f)
+        layout.setText(font, "$sfxPct%")
+        font.draw(batch, layout, contentX, row4Y - 35f)
+        font.data.setScale(2f)
+
+        // Reset font
         font.data.setScale(3f)
         font.color = Color.WHITE
     }
 
     private fun drawStatsContent(panelX: Float, panelY: Float) {
         val contentX = panelX + 40f
-        val topY = panelY + panelHeight - 60f
+        val topY = panelY + statsPanelHeight - 60f
 
         // Header
         titleFont.data.setScale(3f)
@@ -373,7 +691,7 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
         // Separator
         font.data.setScale(1.5f)
         font.color = Color.GRAY
-        layout.setText(font, "----------------------------")
+        layout.setText(font, "-------------------------------------------")
         font.draw(batch, layout, panelX + (panelWidth - layout.width) / 2f, topY - 40f)
 
         // Placeholder stat rows
