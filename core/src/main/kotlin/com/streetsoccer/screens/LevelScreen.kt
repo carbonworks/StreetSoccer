@@ -24,6 +24,7 @@ import com.streetsoccer.ecs.systems.InputSystem
 import com.streetsoccer.ecs.systems.PhysicsSystem
 import com.streetsoccer.ecs.systems.RenderSystem
 import com.streetsoccer.ecs.systems.SpawnSystem
+import com.streetsoccer.ecs.systems.TrajectorySystem
 import com.streetsoccer.input.InputRouter
 import com.streetsoccer.physics.PhysicsContactListener
 import com.streetsoccer.physics.TuningConstants
@@ -78,11 +79,14 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     private val inputSystem = InputSystem(inputRouter, gameStateManager, world, game.audioService, game.assets)
     private val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
     private val catcherSystem = CatcherSystem(gameStateManager, engine)
+    private val trajectorySystem = TrajectorySystem(
+        inputRouter, gameStateManager, { viewport.camera.combined }
+    ).apply {
+        trajectoryPreviewEnabled = game.saveService.loadSettings().trajectoryPreviewEnabled
+    }
 
     /**
      * Listens for state transitions to automatically show/hide the pause overlay.
-     * This ensures the overlay appears regardless of what triggered the pause
-     * (pause icon tap, Android back button, etc.).
      */
     private val pauseStateListener = object : GameStateListener {
         override fun onStateEnter(newState: GameState) {
@@ -98,25 +102,15 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         }
     }
 
-    /**
-     * Input processor that handles Android back button and escape key during gameplay.
-     *
-     * Per menu-and-navigation-flow.md Section 8:
-     * - During active gameplay: back button triggers pause (same as tapping pause icon)
-     * - During PAUSED (no overlay): back button acts as Resume
-     */
     private val backButtonProcessor = object : InputAdapter() {
         override fun keyDown(keycode: Int): Boolean {
             if (keycode == Input.Keys.BACK || keycode == Input.Keys.ESCAPE) {
                 if (gameStateManager.isPaused) {
-                    // Paused state: back acts as Resume
                     handleResume()
                     return true
                 }
-                // Gameplay state: back triggers pause
                 if (gameStateManager.isInGameplay) {
                     gameStateManager.pause()
-                    // Overlay will be shown automatically by pauseStateListener
                     return true
                 }
             }
@@ -151,6 +145,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         engine.addSystem(inputSystem)
         engine.addSystem(hudSystem)
         engine.addSystem(catcherSystem)
+        engine.addSystem(trajectorySystem)
 
         // Create the catcher NPC entity in the intersection
         createCatcherEntity()
@@ -389,6 +384,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         Gdx.app.log("LevelScreen", "dispose")
         renderSystem.dispose()
         hudSystem.dispose()
+        trajectorySystem.dispose()
         if (::pauseOverlay.isInitialized) {
             pauseOverlay.dispose()
         }
