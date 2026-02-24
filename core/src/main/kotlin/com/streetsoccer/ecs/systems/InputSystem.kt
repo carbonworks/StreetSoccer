@@ -88,6 +88,16 @@ class InputSystem(
     var isBigBombActive: Boolean = false
         private set
 
+    /**
+     * When true, the next kick is forced into Big Bomb mode regardless of
+     * power and slider thresholds. Set by external systems (e.g., HudSystem's
+     * bomb mode button) via [LevelScreen] wiring each frame.
+     *
+     * InputSystem reads this on each flick and does NOT reset it — the caller
+     * (HudSystem) is responsible for resetting after the kick launches.
+     */
+    var bombModeOverride: Boolean = false
+
     override fun update(deltaTime: Float) {
         // --- 1. Check for pending flick (ball spawn) ---
         val flickResult = inputRouter.consumeFlickResult()
@@ -111,15 +121,17 @@ class InputSystem(
         // Reset steer swipe counter for the new kick
         inputRouter.resetSteerSwipeCounter()
 
-        // Check Big Bomb thresholds
-        isBigBombActive = flickResult.power >= TuningConstants.BIG_BOMB_POWER_THRESHOLD
+        // Check Big Bomb thresholds — bomb mode override forces activation regardless
+        val meetsThresholds = flickResult.power >= TuningConstants.BIG_BOMB_POWER_THRESHOLD
                 && flickResult.sliderValue >= TuningConstants.BIG_BOMB_SLIDER_THRESHOLD
+        isBigBombActive = meetsThresholds || bombModeOverride
 
         // Play kick launch sound (bass boom — GDD Section 9)
         audioService.playKickLaunch()
 
         if (isBigBombActive) {
-            Gdx.app.log(TAG, "Big Bomb activated! power=${flickResult.power}, slider=${flickResult.sliderValue}")
+            val source = if (bombModeOverride && !meetsThresholds) "bomb mode button" else "thresholds"
+            Gdx.app.log(TAG, "Big Bomb activated via $source! power=${flickResult.power}, slider=${flickResult.sliderValue}")
             audioService.playBigBombActivation()
         }
 

@@ -238,7 +238,10 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         hudSystem.sliderValue = inputRouter.sliderValue
         hudSystem.steerSwipeCount = inputRouter.steerSwipeCount
 
-        // 7. Render pause overlay on top of everything (if visible)
+        // 7. Wire bomb mode: HudSystem button state -> InputSystem override flag
+        inputSystem.bombModeOverride = hudSystem.isBombModeActive
+
+        // 8. Render pause overlay on top of everything (if visible)
         pauseOverlay.render(delta)
     }
 
@@ -279,8 +282,6 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         val entity = engine.createEntity()
 
         val transform = engine.createComponent(TransformComponent::class.java).apply {
-            // Center of intersection — between the player and the deep corridor.
-            // Coordinates from suburban-crossroads.json catcher_spawn_point.
             x = 960f
             y = 280f
             height = 0f
@@ -292,9 +293,6 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         }
 
         val visual = engine.createComponent(VisualComponent::class.java).apply {
-            // Placeholder — texture will be assigned when assets are loaded.
-            // Render on layer 1 (cross-street level) so the catcher appears
-            // at the correct depth in the scene.
             renderLayer = 1
         }
 

@@ -62,6 +62,22 @@ class HudSystem(
         private const val SLIDER_THUMB_SIZE = 40f
         private const val SLIDER_TOUCH_WIDTH = 80f
 
+        // Bomb button dimensions and positioning
+        private const val BOMB_BUTTON_WIDTH = 140f
+        private const val BOMB_BUTTON_HEIGHT = 64f
+        private const val BOMB_BUTTON_MARGIN_BOTTOM = 120f
+        private const val BOMB_BUTTON_MARGIN_RIGHT = 80f
+
+        // Bomb button colors
+        private val BOMB_COLOR_OFF = Color(0.7f, 0.15f, 0.15f, 0.85f)
+        private val BOMB_COLOR_ON = Color(1f, 0.2f, 0.1f, 1f)
+        private val BOMB_BORDER_COLOR_ON = Color(1f, 0.85f, 0.2f, 1f)
+
+        // Bomb button pulse animation
+        private const val BOMB_PULSE_MIN_SCALE = 1.0f
+        private const val BOMB_PULSE_MAX_SCALE = 1.08f
+        private const val BOMB_PULSE_PERIOD = 0.6f
+
         // Score popup animation (from ui-hud-layout.md Section 6)
         private const val POPUP_FLOAT_DISTANCE = 80f
         private const val POPUP_DURATION = 1.0f
@@ -107,10 +123,27 @@ class HudSystem(
     private lateinit var sliderThumb: Image
     private lateinit var angleLabel: Label
     private lateinit var steerMeterSegments: Array<Image>
+    private lateinit var bombButton: Image
+    private lateinit var bombButtonBorder: Image
+    private lateinit var bombButtonLabel: Label
 
     // --- Tracking previous values for change detection ---
     private var lastDisplayedScore: Long = -1L
     private var lastDisplayedStreak: Int = -1
+
+    /**
+     * Whether bomb mode is currently armed.
+     *
+     * When true, the next kick will be treated as a Big Bomb regardless of
+     * power and slider thresholds. InputSystem reads this flag each frame;
+     * HudSystem resets it automatically after the kick transitions to
+     * BALL_IN_FLIGHT.
+     */
+    var isBombModeActive: Boolean = false
+        private set
+
+    // Timer for bomb button pulse animation when armed
+    private var bombPulseTimer: Float = 0f
 
     /**
      * Current steer swipe count for the active kick.
@@ -264,6 +297,62 @@ class HudSystem(
         for (segment in steerMeterSegments) {
             stage.addActor(segment)
         }
+
+        // --- Bomb Mode Button (bottom-right, above launch zone) ---
+        // Border/glow layer (slightly larger, hidden when bomb mode is off)
+        val bombBorderTexture = createRoundedRectTexture(
+            (BOMB_BUTTON_WIDTH + 8f).toInt(), (BOMB_BUTTON_HEIGHT + 8f).toInt(),
+            BOMB_BORDER_COLOR_ON
+        )
+        bombButtonBorder = Image(TextureRegionDrawable(TextureRegion(bombBorderTexture))).apply {
+            setSize(BOMB_BUTTON_WIDTH + 8f, BOMB_BUTTON_HEIGHT + 8f)
+            setPosition(
+                WORLD_WIDTH - BOMB_BUTTON_MARGIN_RIGHT - BOMB_BUTTON_WIDTH - 4f,
+                BOMB_BUTTON_MARGIN_BOTTOM - 4f
+            )
+            isVisible = false
+            setOrigin(width / 2f, height / 2f)
+        }
+        stage.addActor(bombButtonBorder)
+
+        // Main button background
+        val bombBgTexture = createRoundedRectTexture(
+            BOMB_BUTTON_WIDTH.toInt(), BOMB_BUTTON_HEIGHT.toInt(),
+            BOMB_COLOR_OFF
+        )
+        bombButton = Image(TextureRegionDrawable(TextureRegion(bombBgTexture))).apply {
+            setSize(BOMB_BUTTON_WIDTH, BOMB_BUTTON_HEIGHT)
+            setPosition(
+                WORLD_WIDTH - BOMB_BUTTON_MARGIN_RIGHT - BOMB_BUTTON_WIDTH,
+                BOMB_BUTTON_MARGIN_BOTTOM
+            )
+            isVisible = false
+            setOrigin(width / 2f, height / 2f)
+        }
+
+        // Touch listener for toggle behavior
+        bombButton.addListener(object : InputListener() {
+            override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                toggleBombMode()
+                return true
+            }
+        })
+        stage.addActor(bombButton)
+
+        // Label on the button
+        val bombLabelStyle = Label.LabelStyle(font, Color.WHITE)
+        bombButtonLabel = Label("BOMB", bombLabelStyle).apply {
+            setFontScale(1.8f)
+            setAlignment(Align.center)
+        }
+        bombButtonLabel.setSize(BOMB_BUTTON_WIDTH, BOMB_BUTTON_HEIGHT)
+        bombButtonLabel.setPosition(
+            WORLD_WIDTH - BOMB_BUTTON_MARGIN_RIGHT - BOMB_BUTTON_WIDTH,
+            BOMB_BUTTON_MARGIN_BOTTOM
+        )
+        bombButtonLabel.isVisible = false
+        bombButtonLabel.touchable = com.badlogic.gdx.scenes.scene2d.Touchable.disabled // Let clicks pass through to the button
+        stage.addActor(bombButtonLabel)
     }
 
     // ---- Per-frame update ----
@@ -314,6 +403,9 @@ class HudSystem(
 
         // --- Update angle slider visual ---
         updateSliderVisual(state)
+
+        // --- Update bomb mode button ---
+        updateBombButton(state, deltaTime)
 
         // --- Pause icon always visible during gameplay ---
         pauseIcon.isVisible = true
@@ -514,6 +606,61 @@ class HudSystem(
         }
     }
 
+    // ---- Bomb Mode ----
+
+    /**
+     * Toggle bomb mode on/off. Called when the player taps the bomb button.
+     */
+    private fun toggleBombMode() {
+        isBombModeActive = !isBombModeActive
+        bombPulseTimer = 0f
+
+        if (isBombModeActive) {
+            // Visual feedback: brighten button and show border glow
+            bombButton.color.set(BOMB_COLOR_ON)
+            bombButtonBorder.isVisible = true
+        } else {
+            // Visual feedback: dim button and hide border
+            bombButton.color.set(BOMB_COLOR_OFF)
+            bombButtonBorder.isVisible = false
+            // Reset scale in case pulse was mid-animation
+            bombButton.setScale(1f)
+            bombButtonBorder.setScale(1f)
+        }
+    }
+
+    /**
+     * Update the bomb button visibility and pulse animation.
+     *
+     * Button is visible only during READY and AIMING states. When armed,
+     * it pulses gently to reinforce that bomb mode is active.
+     */
+    private fun updateBombButton(state: GameState, deltaTime: Float) {
+        val showButton = state is GameState.Ready || state is GameState.Aiming
+
+        bombButton.isVisible = showButton
+        bombButtonLabel.isVisible = showButton
+        // Border only visible when armed AND button is shown
+        bombButtonBorder.isVisible = showButton && isBombModeActive
+
+        if (showButton && isBombModeActive) {
+            // Pulse animation: oscillate scale using a sine wave
+            bombPulseTimer += deltaTime
+            val t = (bombPulseTimer % BOMB_PULSE_PERIOD) / BOMB_PULSE_PERIOD
+            val sineValue = kotlin.math.sin(t * 2f * Math.PI.toFloat())
+            val scale = BOMB_PULSE_MIN_SCALE + (BOMB_PULSE_MAX_SCALE - BOMB_PULSE_MIN_SCALE) * (0.5f + 0.5f * sineValue)
+
+            bombButton.setScale(scale)
+            bombButtonBorder.setScale(scale)
+            bombButtonLabel.setFontScale(1.8f * scale)
+        } else {
+            // Ensure normal scale when not pulsing
+            bombButton.setScale(1f)
+            bombButtonBorder.setScale(1f)
+            bombButtonLabel.setFontScale(1.8f)
+        }
+    }
+
     // ---- Score Popups ----
 
     /**
@@ -584,6 +731,22 @@ class HudSystem(
             is GameState.BallInFlight -> {
                 // Reset steer swipe count for the new kick
                 steerSwipeCount = 0
+                // Reset bomb mode after the kick has been launched (single-use per activation)
+                if (isBombModeActive) {
+                    isBombModeActive = false
+                    bombPulseTimer = 0f
+                    if (::bombButton.isInitialized) {
+                        bombButton.color.set(BOMB_COLOR_OFF)
+                        bombButton.setScale(1f)
+                    }
+                    if (::bombButtonBorder.isInitialized) {
+                        bombButtonBorder.isVisible = false
+                        bombButtonBorder.setScale(1f)
+                    }
+                    if (::bombButtonLabel.isInitialized) {
+                        bombButtonLabel.setFontScale(1.8f)
+                    }
+                }
             }
             is GameState.Ready -> {
                 // Steer meter will be hidden by updateSteerMeter
