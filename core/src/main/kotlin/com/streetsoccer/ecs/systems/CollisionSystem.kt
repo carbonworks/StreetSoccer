@@ -3,6 +3,7 @@ package com.streetsoccer.ecs.systems
 import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.Entity
 import com.badlogic.ashley.core.EntitySystem
+import com.streetsoccer.ecs.catcherCmpMapper
 import com.streetsoccer.ecs.colliderCmpMapper
 import com.streetsoccer.ecs.targetCmpMapper
 import com.streetsoccer.ecs.transformCmpMapper
@@ -71,6 +72,25 @@ class CollisionSystem(
      * @return `true` if the collision was decisive (ball removed), `false` otherwise.
      */
     private fun processCollisionPair(entityA: Entity, entityB: Entity): Boolean {
+        // --- Catcher catch check (before target/wall checks) ---
+        val catcherA = catcherCmpMapper.get(entityA)
+        val catcherB = catcherCmpMapper.get(entityB)
+
+        if (catcherA != null || catcherB != null) {
+            // Determine which entity is the ball (has VelocityComponent).
+            val ballEntity = when {
+                velocityCmpMapper.has(entityA) -> entityA
+                velocityCmpMapper.has(entityB) -> entityB
+                else -> return false
+            }
+
+            // Ball caught by catcher NPC — distinct from target hit and wall miss.
+            // No points, no streak break — the catcher simply intercepts the ball.
+            gameStateManager.transitionTo(GameState.Caught)
+            ecsEngine.removeEntity(ballEntity)
+            return true
+        }
+
         // --- Target hit check ---
         val targetA = targetCmpMapper.get(entityA)
         val targetB = targetCmpMapper.get(entityB)

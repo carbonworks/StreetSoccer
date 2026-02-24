@@ -35,6 +35,9 @@ class GameStateManager {
 
         /** Duration in seconds that the IMPACT_MISSED feedback state lasts before auto-transitioning to READY. */
         const val IMPACT_MISSED_DURATION = 0.75f
+
+        /** Duration in seconds that the CAUGHT feedback state lasts before auto-transitioning to READY. */
+        const val CAUGHT_DURATION = 1.25f
     }
 
     // ---- State ----
@@ -132,7 +135,8 @@ class GameStateManager {
             GameState.Aiming::class,
             GameState.BallInFlight::class,
             GameState.Scoring::class,
-            GameState.ImpactMissed::class
+            GameState.ImpactMissed::class,
+            GameState.Caught::class
         )
         if (currentState::class !in pausableStates) return
 
@@ -181,7 +185,7 @@ class GameStateManager {
         if (isPaused) return
 
         when (currentState) {
-            is GameState.Scoring, is GameState.ImpactMissed -> {
+            is GameState.Scoring, is GameState.ImpactMissed, is GameState.Caught -> {
                 stateTimer -= deltaTime
                 if (stateTimer <= 0f) {
                     transitionTo(GameState.Ready)
@@ -243,6 +247,12 @@ class GameStateManager {
                 }
                 // On resume, stateTimer already holds the remaining duration.
             }
+            is GameState.Caught -> {
+                if (!isResumeFromPause) {
+                    stateTimer = CAUGHT_DURATION
+                }
+                // On resume, stateTimer already holds the remaining duration.
+            }
             is GameState.Paused -> {
                 // Timer is intentionally NOT reset here. If we paused during
                 // SCORING or IMPACT_MISSED, the remaining stateTimer value is
@@ -276,10 +286,10 @@ class GameStateManager {
      */
     fun remainingStateTime(): Float {
         return when (currentState) {
-            is GameState.Scoring, is GameState.ImpactMissed -> stateTimer
+            is GameState.Scoring, is GameState.ImpactMissed, is GameState.Caught -> stateTimer
             is GameState.Paused -> {
                 val previous = (currentState as GameState.Paused).previousState
-                if (previous is GameState.Scoring || previous is GameState.ImpactMissed) {
+                if (previous is GameState.Scoring || previous is GameState.ImpactMissed || previous is GameState.Caught) {
                     stateTimer
                 } else {
                     0f
@@ -296,7 +306,7 @@ class GameStateManager {
     val isInGameplay: Boolean
         get() = when (currentState) {
             is GameState.Ready, is GameState.Aiming, is GameState.BallInFlight,
-            is GameState.Scoring, is GameState.ImpactMissed -> true
+            is GameState.Scoring, is GameState.ImpactMissed, is GameState.Caught -> true
             is GameState.Paused -> true // Paused is still "in gameplay" (just frozen)
             else -> false
         }
