@@ -135,6 +135,10 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         // Register pause state listener to auto-show/hide the overlay
         gameStateManager.addListener(pauseStateListener)
 
+        // Begin a new session: reset accumulator counters to zero
+        // (per save-and-persistence.md Section 5 — session start)
+        sessionAccumulator.reset()
+
         // Register all ECS systems with the engine
         engine.addSystem(physicsSystem)
         engine.addSystem(collisionSystem)
@@ -279,10 +283,56 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     override fun hide() {
         Gdx.app.log("LevelScreen", "hide")
+
+        // Session end (normal): merge session stats into career and persist.
+        // Per save-and-persistence.md Section 5, session end folds all
+        // accumulated stats into CareerStats and writes profile.json.
+        mergeSessionAndSave()
+
         // Clear input processor when leaving this screen
         Gdx.input.inputProcessor = null
         // Unregister pause listener to prevent stale callbacks
         gameStateManager.removeListener(pauseStateListener)
+    }
+
+    /**
+     * Called when the app is backgrounded (Android onPause).
+     * Treated as a session end per save-and-persistence.md Section 5:
+     * "Same merge-and-write as normal session end." The safety net
+     * ensures no progress is lost if the OS kills the app after onPause.
+     *
+     * The accumulator is reset after merging, so if the app resumes and
+     * the player continues playing, new kicks accumulate into a fresh
+     * mini-session. Career stats already reflect everything from before
+     * the pause via the merge.
+     */
+    override fun pause() {
+        Gdx.app.log("LevelScreen", "pause (backgrounded)")
+        mergeSessionAndSave()
+    }
+
+    /**
+     * Merge current session stats into the career profile and persist to disk.
+     * After merging, the accumulator is reset to prevent double-counting if
+     * called again (e.g., pause followed by hide, or multiple pause events).
+     *
+     * Only stats from completed kicks are included — any in-progress kick
+     * during BALL_IN_FLIGHT is discarded per save-and-persistence.md Section 6.
+     */
+    private fun mergeSessionAndSave() {
+        try {
+            game.profile = sessionAccumulator.mergeInto(game.profile)
+            game.saveService.saveProfile(game.profile)
+            Gdx.app.log(
+                "LevelScreen",
+                "Session merged: sessionScore=${sessionAccumulator.sessionScore}, " +
+                    "careerTotal=${game.profile.career.totalScore}"
+            )
+            // Reset after merge so subsequent calls are no-ops (merge zeros).
+            sessionAccumulator.reset()
+        } catch (e: Exception) {
+            Gdx.app.log("LevelScreen", "Failed to merge/save session: ${e.message}")
+        }
     }
 
     override fun resize(width: Int, height: Int) {
