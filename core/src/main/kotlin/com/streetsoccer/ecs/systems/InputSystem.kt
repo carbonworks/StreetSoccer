@@ -115,16 +115,20 @@ class InputSystem(
 
         // Compute initial velocity from FlickResult per physics-and-tuning.md Section 2:
         //   horizontalSpeed = power * MAX_KICK_SPEED
-        //   vx = horizontalSpeed * sin(direction)    -- lateral
-        //   vy = horizontalSpeed * cos(direction)    -- depth (into scene)
+        //   vx = horizontalSpeed * cos(direction)    -- lateral
+        //   vy = horizontalSpeed * sin(direction)    -- depth (into scene)
         //   vz = horizontalSpeed * sin(launchAngle)  -- vertical (upward arc)
         val horizontalSpeed = flickResult.power * TuningConstants.MAX_KICK_SPEED
         val launchAngleRad = Math.toRadians(
             (TuningConstants.MIN_ANGLE + flickResult.sliderValue * (TuningConstants.MAX_ANGLE - TuningConstants.MIN_ANGLE)).toDouble()
         ).toFloat()
 
-        val vx = horizontalSpeed * sin(flickResult.direction)
-        val vy = horizontalSpeed * cos(flickResult.direction)
+        // direction = atan2(dy, dx) where dy is the upward screen component.
+        // A straight-up flick gives direction ≈ PI/2.
+        // Standard trig: x-component = cos(θ), y-component = sin(θ).
+        // vx = lateral (screen-x), vy = depth (into scene / screen-y).
+        val vx = horizontalSpeed * cos(flickResult.direction)
+        val vy = horizontalSpeed * sin(flickResult.direction)
         val vz = horizontalSpeed * sin(launchAngleRad)
 
         // --- Create ball entity ---
