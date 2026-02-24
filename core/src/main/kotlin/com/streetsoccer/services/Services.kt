@@ -339,17 +339,52 @@ class SaveService {
 }
 
 // ---------------------------------------------------------------------------
-// Audio Service (pre-existing — unchanged)
+// Audio Service — interface covering all ~12 sound cues from GDD Section 9
 // ---------------------------------------------------------------------------
 
 interface AudioService {
+    // --- Impact sounds (target hits) ---
     fun playGlassBreak()
     fun playMetallicClang()
     fun playCarAlarm()
+    fun playElectronicFizz()    // Drone hit
+
+    // --- Kick & flight ---
+    fun playKickLaunch()        // Bass boom on launch
+    fun playBigBombActivation() // Big Bomb activation emphasis
+    fun playWhoosh()            // Flight / steer swipe whoosh
+
+    // --- Miss / bounce ---
+    fun playBounce()            // Wall / fence / obstacle hit
+    fun playMiss()              // Out-of-bounds or silent miss
+
+    // --- Streak & scoring ---
+    fun playStreakChime()        // Streak milestone chime
+    fun playScorePopup()         // Score popup sound
+
+    // --- UI ---
+    fun playUiTap()              // Menu / HUD tap
+
+    // --- Volume control ---
+    fun updateVolume(masterVolume: Float, sfxVolume: Float)
+
+    // --- Lifecycle ---
+    fun dispose()
 }
 
 class NoopAudioService : AudioService {
     override fun playGlassBreak() {}
     override fun playMetallicClang() {}
     override fun playCarAlarm() {}
+    override fun playElectronicFizz() {}
+    override fun playKickLaunch() {}
+    override fun playBigBombActivation() {}
+    override fun playWhoosh() {}
+    override fun playBounce() {}
+    override fun playMiss() {}
+    override fun playStreakChime() {}
+    override fun playScorePopup() {}
+    override fun playUiTap() {}
+    override fun updateVolume(masterVolume: Float, sfxVolume: Float) {}
+    override fun dispose() {}
 }

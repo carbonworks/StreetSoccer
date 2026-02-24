@@ -7,7 +7,7 @@ import com.streetsoccer.screens.AttractScreen
 import com.streetsoccer.screens.LevelScreen
 import com.streetsoccer.screens.LoadingScreen
 import com.streetsoccer.services.AudioService
-import com.streetsoccer.services.NoopAudioService
+import com.streetsoccer.services.AudioServiceImpl
 import com.streetsoccer.services.ProfileData
 import com.streetsoccer.services.SaveService
 import com.streetsoccer.services.SettingsData
@@ -38,7 +38,11 @@ class GameBootstrapper : KtxGame<KtxScreen>() {
 
         // Create shared services
         saveService = SaveService()
-        audioService = NoopAudioService()
+        val settings = saveService.loadSettings()
+        audioService = AudioServiceImpl(
+            initialMasterVolume = settings.masterVolume,
+            initialSfxVolume = settings.sfxVolume
+        )
         assets = AssetManager()
 
         // Load persisted data (gracefully falls back to defaults on missing/corrupt files)
@@ -75,6 +79,7 @@ class GameBootstrapper : KtxGame<KtxScreen>() {
         // Final save before shutdown
         flushSave()
         super.dispose()
+        audioService.dispose()
         assets.dispose()
     }
 
