@@ -7,7 +7,7 @@ import com.streetsoccer.screens.AttractScreen
 import com.streetsoccer.screens.LevelScreen
 import com.streetsoccer.screens.LoadingScreen
 import com.streetsoccer.services.AudioService
-import com.streetsoccer.services.NoopAudioService
+import com.streetsoccer.services.AudioServiceImpl
 import com.streetsoccer.services.SaveService
 import ktx.app.KtxGame
 import ktx.app.KtxScreen
@@ -28,7 +28,11 @@ class GameBootstrapper : KtxGame<KtxScreen>() {
 
         // Create shared services
         saveService = SaveService()
-        audioService = NoopAudioService()
+        val settings = saveService.loadSettings()
+        audioService = AudioServiceImpl(
+            initialMasterVolume = settings.masterVolume,
+            initialSfxVolume = settings.sfxVolume
+        )
         assets = AssetManager()
 
         addScreen(LoadingScreen(this))
@@ -46,6 +50,7 @@ class GameBootstrapper : KtxGame<KtxScreen>() {
 
     override fun dispose() {
         super.dispose()
+        audioService.dispose()
         assets.dispose()
     }
 }

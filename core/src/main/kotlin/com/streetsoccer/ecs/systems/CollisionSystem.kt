@@ -8,6 +8,7 @@ import com.streetsoccer.ecs.targetCmpMapper
 import com.streetsoccer.ecs.transformCmpMapper
 import com.streetsoccer.ecs.velocityCmpMapper
 import com.streetsoccer.physics.PhysicsContactListener
+import com.streetsoccer.services.AudioService
 import com.streetsoccer.services.SessionAccumulator
 import com.streetsoccer.state.GameState
 import com.streetsoccer.state.GameStateManager
@@ -27,7 +28,8 @@ class CollisionSystem(
     private val contactListener: PhysicsContactListener,
     private val gameStateManager: GameStateManager,
     private val sessionAccumulator: SessionAccumulator,
-    private val ecsEngine: Engine
+    private val ecsEngine: Engine,
+    private val audioService: AudioService
 ) : EntitySystem() {
 
     companion object {
@@ -95,6 +97,11 @@ class CollisionSystem(
                 val score = (target.basePoints * depthMultiplier).toLong()
 
                 sessionAccumulator.recordHit(target.targetTypeId, score)
+
+                // Play target-type-specific impact sound (GDD Section 9)
+                playTargetHitSound(target.targetTypeId)
+                audioService.playScorePopup()
+
                 gameStateManager.transitionTo(GameState.Scoring)
                 ecsEngine.removeEntity(ballEntity)
                 return true
@@ -114,12 +121,29 @@ class CollisionSystem(
             }
 
             sessionAccumulator.breakStreak()
+            audioService.playBounce()
             gameStateManager.transitionTo(GameState.ImpactMissed)
             ecsEngine.removeEntity(ballEntity)
             return true
         }
 
         return false
+    }
+
+    /**
+     * Play the appropriate impact sound for a target hit based on target type.
+     *
+     * Maps target type IDs (from `suburban-crossroads.json`) to the sound cues
+     * defined in GDD Section 9.
+     */
+    private fun playTargetHitSound(targetTypeId: String) {
+        when (targetTypeId) {
+            "window" -> audioService.playGlassBreak()
+            "garage_door" -> audioService.playMetallicClang()
+            "vehicle" -> audioService.playCarAlarm()
+            "drone" -> audioService.playElectronicFizz()
+            else -> audioService.playMetallicClang() // Fallback for unknown types
+        }
     }
 
     /**
@@ -137,6 +161,7 @@ class CollisionSystem(
                     transform.y < MIN_Y || transform.y > MAX_Y
                 ) {
                     sessionAccumulator.breakStreak()
+                    audioService.playMiss()
                     gameStateManager.transitionTo(GameState.ImpactMissed)
                     ecsEngine.removeEntity(entity)
                 }

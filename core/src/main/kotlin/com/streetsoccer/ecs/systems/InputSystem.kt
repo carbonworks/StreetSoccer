@@ -19,6 +19,7 @@ import com.streetsoccer.ecs.visual
 import com.streetsoccer.input.FlickResult
 import com.streetsoccer.input.InputRouter
 import com.streetsoccer.physics.TuningConstants
+import com.streetsoccer.services.AudioService
 import com.streetsoccer.state.GameState
 import com.streetsoccer.state.GameStateManager
 import kotlin.math.cos
@@ -41,7 +42,8 @@ import kotlin.math.sin
 class InputSystem(
     private val inputRouter: InputRouter,
     private val stateManager: GameStateManager,
-    private val world: World
+    private val world: World,
+    private val audioService: AudioService
 ) : EntitySystem() {
 
     companion object {
@@ -109,8 +111,12 @@ class InputSystem(
         isBigBombActive = flickResult.power >= TuningConstants.BIG_BOMB_POWER_THRESHOLD
                 && flickResult.sliderValue >= TuningConstants.BIG_BOMB_SLIDER_THRESHOLD
 
+        // Play kick launch sound (bass boom — GDD Section 9)
+        audioService.playKickLaunch()
+
         if (isBigBombActive) {
             Gdx.app.log(TAG, "Big Bomb activated! power=${flickResult.power}, slider=${flickResult.sliderValue}")
+            audioService.playBigBombActivation()
         }
 
         // Compute initial velocity from FlickResult per physics-and-tuning.md Section 2:
