@@ -6,18 +6,7 @@ Items are ordered by priority (top = do first). Tags indicate category. Wave ass
 
 | #  | Item | Tag | Wave |
 |----|------|-----|------|
-| 1  | Straight kick hits invisible wall | bug | Unassigned |
-| 2  | Pause overlay menu | bug | → WP-10 (Wave 3) |
-| 3  | Save session integration | integration | → WP-11 (Wave 3) |
-| 4  | Settings overlay (functional) | feature | → WP-12 (Wave 3) |
-| 5  | Stats overlay (live data) | feature | → WP-15 (Wave 4) |
-| 6  | Audio implementation | feature | → WP-13 (Wave 3) |
-| 7  | Bomb Mode Button | gameplay | → WP-16 (Wave 4) |
-| 8  | Ball Catcher NPC | gameplay | → WP-14 (Wave 3) |
-| 9  | Trajectory preview rendering | feature | → WP-17 (Wave 4) |
 | 10 | Big Bomb meteor feedback | feature | Wave 5+ |
-| 11 | Separate buildings from background | art | → WP-18 (Wave 4) |
-| 12 | Flatten front-left hill | art | → WP-19 (Wave 4) |
 | 13 | Cosmetic & unlock system | feature | Wave 5+ |
 | 14 | Audio Spec | doc | Wave 5+ |
 | 15 | Asset Registry (doc + placeholders) | doc | Wave 5+ |
@@ -33,53 +22,9 @@ Items are ordered by priority (top = do first). Tags indicate category. Wave ass
 
 ## Item Details
 
-### 1. Straight kick hits invisible wall `bug`
-
-Launching the ball straight ahead causes it to stop abruptly as if it hit something, but nothing is visibly there. Flicking the ball to either side does not have this issue. Likely candidate: the Ball Catcher NPC (WP-14) placed at center of intersection (960, 280), or a collider in `suburban-crossroads.json` blocking the central corridor.
-
-### 2. Pause overlay menu `bug`
-
-Pressing pause causes all HUD elements to disappear with nothing replacing them. Should show a pause overlay/menu instead.
-
-### 3. Save session integration `integration`
-
-Wire SaveService into the game loop: merge session stats to career on session end, save on pause/hide, load on resume.
-
-### 4. Settings overlay (functional) `feature`
-
-Replace the placeholder settings panel in AttractScreen with functional controls wired to SettingsData (trajectory preview toggle, slider side, volume sliders).
-
-### 5. Stats overlay (live data) `feature`
-
-Replace the placeholder stats panel in AttractScreen with live ProfileData display (career score, best streak, best session, kicks, targets by type).
-
-### 6. Audio implementation `feature`
-
-Implement `AudioServiceImpl` replacing `NoopAudioService`. Wire sound effects into CollisionSystem (glass-break, metallic clang, car alarm), BALL_IN_FLIGHT (whoosh), and kick launch (bass boom). Use placeholder beep/boop sounds until real assets exist. See GDD Section 9 for all ~12 cues.
-
-### 7. Bomb Mode Button `gameplay`
-
-A red button on the HUD that the player presses before launching to activate "bomb mode" for a powered-up kick. Visual feedback on press, zooms the ball on launch.
-
-### 8. Ball Catcher NPC `gameplay`
-
-A person standing in the middle of the intersection who can catch the ball. Acts as a target or obstacle in the play area.
-
-### 9. Trajectory preview rendering `feature`
-
-Toggleable dotted arc showing predicted ball path during AIMING state. Updates in real-time as angle slider moves. Respects trajectoryPreviewEnabled setting.
-
 ### 10. Big Bomb meteor feedback `feature`
 
 Replace the alpha-build red overlay with dedicated fireball sprite + flame trail for Big Bomb flights. See `ui-hud-layout.md` Section 11.
-
-### 11. Separate buildings from background `art`
-
-Extract buildings into separate layers from `background.jpg`. Keep roads in place. The road going straight back should curve right. The upper-right sidewalk continues straight and intersects with the curved road in the back. The horizon sits just behind the curved road with some grass and/or sidewalk. Separate land from sky for future sky replacement.
-
-### 12. Flatten front-left hill `art`
-
-Remove the hill in the front-left of the scene and replace it with flat grass.
 
 ### 13. Cosmetic & unlock system `feature`
 
@@ -131,6 +76,17 @@ Reflect current mechanics (three-input model, 2-axis steer, diminishing returns,
 
 ## Completed
 
+- [x] #1 — Straight kick hits invisible wall — Fixed swapped sin/cos in velocity calc (WP-20)
+- [x] #2 — Pause overlay menu — PauseOverlay with Resume/Quit, back button support (WP-10, Wave 3)
+- [x] #3 — Save session integration — Lifecycle hooks in GameBootstrapper + LevelScreen (WP-11, Wave 3)
+- [x] #4 — Settings overlay (functional) — Trajectory toggle, slider side, volume sliders (WP-12, Wave 3)
+- [x] #5 — Stats overlay (live data) — Career score, best streak, kicks, targets by type (WP-15, Wave 4)
+- [x] #6 — Audio implementation — AudioServiceImpl with 12 cues, placeholder sounds (WP-13, Wave 3)
+- [x] #7 — Bomb Mode Button — Red HUD button, pulse animation, auto-reset (WP-16, Wave 4)
+- [x] #8 — Ball Catcher NPC — CatcherComponent/System, proximity catch, Caught state (WP-14, Wave 3)
+- [x] #9 — Trajectory preview rendering — Dotted arc during AIMING, respects settings (WP-17, Wave 4)
+- [x] #11 — Separate buildings from background — BackgroundRenderer with layered loading (WP-18, Wave 4)
+- [x] #12 — Flatten front-left hill — Art documentation delivered (WP-19, Wave 4)
 - [x] Update technical-architecture.md — Add input handling architecture and physics constants — Delivered as standalone specs: `input-system.md` and `physics-and-tuning.md`
 - [x] Physics tuning guide — Define actual constants for gravity, drag, Magnus scaling, spin decay rate — Delivered as `physics-and-tuning.md`
 - [x] Update game-mechanics-overview.md — Sync with the new flick+steer+angle slider mechanics, 2-axis steer, diminishing returns, and ball shadow

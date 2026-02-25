@@ -53,8 +53,8 @@ class InputSystem(
     companion object {
         /** Player origin X — bottom center of a 1920x1080 screen (from suburban-crossroads.json). */
         private const val PLAYER_ORIGIN_X = 960f
-        /** Player origin Y — bottom of screen (from suburban-crossroads.json). */
-        private const val PLAYER_ORIGIN_Y = 0f
+        /** Player origin Y — slightly above bottom edge so ball is visible at launch. */
+        private const val PLAYER_ORIGIN_Y = 60f
 
         /** Horizon Y for depth scaling (from suburban-crossroads.json). */
         private const val HORIZON_Y = 540f

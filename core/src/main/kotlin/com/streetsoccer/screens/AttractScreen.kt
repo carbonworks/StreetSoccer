@@ -362,7 +362,8 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
 
         layout.setText(font, "TAP  TO  PLAY")
         val textX = (worldWidth - layout.width) / 2f
-        val textY = worldHeight / 2f + layout.height / 2f
+        // Slightly above center of the bottom 25% band (~18% from bottom)
+        val textY = worldHeight * 0.18f + layout.height / 2f
         font.draw(batch, layout, textX, textY)
 
         // Reset font scale for other uses

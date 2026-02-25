@@ -6,9 +6,12 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputMultiplexer
 import com.badlogic.gdx.InputAdapter
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.World
 import com.badlogic.gdx.utils.viewport.FitViewport
@@ -68,6 +71,9 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     // --- Pause Overlay ---
     private lateinit var pauseOverlay: PauseOverlay
+
+    // --- Programmatic catcher texture (placeholder until real sprite exists) ---
+    private var catcherTexture: Texture? = null
 
     // --- Fixed-timestep accumulator for Box2D world stepping ---
     private var accumulator = 0f
@@ -269,16 +275,32 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
         val transform = engine.createComponent(TransformComponent::class.java).apply {
             x = 960f
-            y = 280f
+            y = 400f
             height = 0f
-            screenScale = maxOf(0.05f, (540f - 280f) / 540f)
+            screenScale = maxOf(0.05f, (540f - 400f) / 540f)
         }
 
         val catcher = engine.createComponent(CatcherComponent::class.java).apply {
             catchRadius = CatcherComponent.DEFAULT_CATCH_RADIUS
         }
 
+        // Generate a placeholder catcher sprite (orange circle) if no real asset exists
+        val region = if (game.assets.isLoaded("sprites/catcher.png")) {
+            TextureRegion(game.assets.get("sprites/catcher.png", Texture::class.java))
+        } else {
+            val size = 64
+            val pixmap = Pixmap(size, size, Pixmap.Format.RGBA8888)
+            pixmap.setColor(0f, 0f, 0f, 0f)
+            pixmap.fill()
+            pixmap.setColor(1f, 0.5f, 0.1f, 1f) // orange
+            pixmap.fillCircle(size / 2, size / 2, size / 2 - 2)
+            catcherTexture = Texture(pixmap)
+            pixmap.dispose()
+            TextureRegion(catcherTexture)
+        }
+
         val visual = engine.createComponent(VisualComponent::class.java).apply {
+            this.region = region
             renderLayer = 1
         }
 
@@ -380,6 +402,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         if (::pauseOverlay.isInitialized) {
             pauseOverlay.dispose()
         }
+        catcherTexture?.dispose()
         batch.dispose()
         world.dispose()
     }

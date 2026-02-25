@@ -138,11 +138,11 @@ This file defines independent work packages for parallel agent development. Each
 
 ---
 
-## Wave 4 (Next)
+## Wave 4 (Done)
 
 ### WP-15: Stats Overlay (Live Data)
 
-**Status:** ready
+**Status:** done
 **Backlog item:** #4 — Stats overlay (live data)
 **Owns:** `AttractScreen.kt` (stats panel replacement)
 **Reads:** `menu-and-navigation-flow.md`, `save-and-persistence.md`
@@ -156,7 +156,7 @@ Replace the placeholder stats panel in AttractScreen with live ProfileData displ
 
 ### WP-16: Bomb Mode Button
 
-**Status:** ready
+**Status:** done
 **Backlog item:** #6 — Bomb Mode Button
 **Owns:** `HudSystem.kt` (bomb button), `InputSystem.kt` (bomb mode flag)
 **Reads:** `ui-hud-layout.md`, `input-system.md`, `physics-and-tuning.md`
@@ -170,7 +170,7 @@ Add a red "bomb mode" button to the HUD. Player presses it before launching to a
 
 ### WP-17: Trajectory Preview Rendering
 
-**Status:** ready
+**Status:** done
 **Backlog item:** #8 — Trajectory preview rendering
 **Owns:** new `TrajectorySystem.kt`
 **Reads:** `physics-and-tuning.md`, `ui-hud-layout.md`
@@ -184,9 +184,9 @@ Toggleable dotted arc showing predicted ball path during AIMING state. Updates i
 
 ### WP-18: Separate Buildings from Background
 
-**Status:** ready
+**Status:** done
 **Backlog item:** #10 — Separate buildings from background
-**Owns:** new layered background assets
+**Owns:** new `BackgroundRenderer.kt`, new layered background assets
 **Reads:** `environment-z-depth-and-collosion.md`
 **Touches:** `LevelScreen.kt` (multi-layer background rendering), `RenderSystem.kt` (layer ordering)
 **Depends on:** none (Wave 3 done)
@@ -198,7 +198,7 @@ Extract buildings into separate image layers from `background.jpg`. Keep roads i
 
 ### WP-19: Flatten Front-Left Hill
 
-**Status:** ready
+**Status:** done (art documentation delivered; asset-only — actual image edit is manual)
 **Backlog item:** #11 — Flatten front-left hill
 **Owns:** modified background asset(s)
 **Reads:** none
@@ -210,11 +210,25 @@ Remove the hill in the front-left of the scene and replace it with flat grass. A
 
 ---
 
+### WP-20: Bug Fix — Straight Kick Invisible Wall
+
+**Status:** done
+**Backlog item:** #1 — Straight kick hits invisible wall (bug)
+**Owns:** `InputSystem.kt` (velocity calculation fix)
+**Reads:** `physics-and-tuning.md`, `input-system.md`
+**Touches:** none
+**Depends on:** none
+
+**Scope:**
+Fix swapped sin/cos in ball velocity calculation. For a straight-up flick (direction ≈ PI/2), sin was used for vx and cos for vy — sending the ball fully lateral instead of forward. Corrected to `vx = cos(direction)`, `vy = sin(direction)`.
+
+---
+
 ## Wave 4 Conflict Check
 
 - AttractScreen: only WP-15
 - HudSystem: only WP-16
-- InputSystem: only WP-16
+- InputSystem: WP-16 (bomb mode flag), WP-20 (velocity fix) — different code sections, acceptable
 - RenderSystem: WP-17 touches, WP-18 touches — different code paths (preview arc vs. layer ordering), acceptable
 - LevelScreen: WP-16, WP-17, WP-18 all touch — additive registrations, acceptable
 - Art assets: WP-18 and WP-19 both modify background layers but WP-19 is asset-only with no code overlap

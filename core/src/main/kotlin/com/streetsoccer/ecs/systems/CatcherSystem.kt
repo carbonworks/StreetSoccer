@@ -34,6 +34,11 @@ class CatcherSystem(
     private val ecsEngine: Engine
 ) : EntitySystem() {
 
+    companion object {
+        /** Maximum ball height (game-space px) at which the catcher can intercept. */
+        private const val MAX_CATCHABLE_HEIGHT = 80f
+    }
+
     // ---- Component mappers ----
     private val transformMapper = mapperFor<TransformComponent>()
     private val catcherMapper = mapperFor<CatcherComponent>()
@@ -71,6 +76,10 @@ class CatcherSystem(
             val catcherEntity = catcherEntities[i]
             val catcherTransform = transformMapper[catcherEntity] ?: continue
             val catcher = catcherMapper[catcherEntity] ?: continue
+
+            // Only catch balls that are low enough to reach — a ball arcing
+            // high overhead should sail past, not get intercepted.
+            if (ballTransform.height > MAX_CATCHABLE_HEIGHT) continue
 
             val dx = ballTransform.x - catcherTransform.x
             val dy = ballTransform.y - catcherTransform.y
