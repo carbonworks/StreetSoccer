@@ -7,21 +7,20 @@ import com.streetsoccer.ecs.components.TransformComponent
 import com.streetsoccer.ecs.components.VelocityComponent
 import com.streetsoccer.ecs.components.SpinComponent
 import com.streetsoccer.physics.TuningConstants
-import com.streetsoccer.physics.PhysicsAccumulator
 import kotlin.math.sqrt
 
+/**
+ * Applies flight physics (gravity, drag, Magnus effect, spin decay, position
+ * integration, ground collision) to every entity with Transform + Velocity + Spin.
+ *
+ * This system does NOT maintain its own fixed-timestep accumulator.
+ * LevelScreen's fixed-timestep loop is authoritative: it calls engine.update()
+ * with FIXED_TIMESTEP once per accumulated step, so processEntity receives
+ * exactly one physics tick per call.
+ */
 class PhysicsSystem : IteratingSystem(
     Family.all(TransformComponent::class.java, VelocityComponent::class.java, SpinComponent::class.java).get()
 ) {
-    private val accumulator = PhysicsAccumulator()
-
-    override fun update(deltaTime: Float) {
-        accumulator.accumulate(deltaTime)
-        
-        accumulator.update(TuningConstants.FIXED_TIMESTEP) {
-            super.update(TuningConstants.FIXED_TIMESTEP)
-        }
-    }
 
     override fun processEntity(entity: Entity, deltaTime: Float) {
         val transform = entity.getComponent(TransformComponent::class.java)

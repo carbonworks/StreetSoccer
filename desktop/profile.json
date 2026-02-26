@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "career": {
+        "totalKicks": 0,
+        "totalHits": 0,
+        "totalScore": 0,
+        "bestSessionScore": 0,
+        "bestStreak": 0,
+        "longestBigBombDistance": 0.0,
+        "targetsByType": {
+        }
+    },
+    "cosmetics": {
+        "unlockedBallSkins": [
+            "classic_white"
+        ],
+        "unlockedImpactEffects": [
+            "default_shatter"
+        ],
+        "unlockedTrailEffects": [
+            "none"
+        ],
+        "selectedBallSkin": "classic_white",
+        "selectedImpactEffect": "default_shatter",
+        "selectedTrailEffect": "none"
+    },
+    "variants": {
+        "unlockedVariants": [
+            "suburban_crossroads"
+        ],
+        "selectedVariant": "suburban_crossroads"
+    },
+    "dismissedTips": [
+    ]
+}

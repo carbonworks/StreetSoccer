@@ -75,8 +75,18 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     // --- Programmatic catcher texture (placeholder until real sprite exists) ---
     private var catcherTexture: Texture? = null
 
-    // --- Fixed-timestep accumulator for Box2D world stepping ---
+    // --- Fixed-timestep accumulator for physics + Box2D stepping ---
     private var accumulator = 0f
+
+    companion object {
+        /**
+         * Maximum number of fixed-timestep iterations per frame.
+         * Caps the accumulator to prevent a spiral-of-death on frame hitches
+         * (issue #31). If a frame takes longer than 5 physics ticks, excess
+         * time is discarded rather than queued.
+         */
+        private const val MAX_STEPS_PER_FRAME = 5
+    }
 
     // --- ECS Systems (held as fields for direct access in the game loop) ---
     private val physicsSystem = PhysicsSystem()
@@ -86,9 +96,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     private val inputSystem = InputSystem(inputRouter, gameStateManager, world, game.audioService, game.assets)
     private val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
     private val catcherSystem = CatcherSystem(gameStateManager, engine)
-    private val trajectorySystem = TrajectorySystem(
-        inputRouter, gameStateManager, { viewport.camera.combined }
-    ).apply {
+    private val trajectorySystem = TrajectorySystem(gameStateManager, inputRouter).apply {
         trajectoryPreviewEnabled = game.saveService.loadSettings().trajectoryPreviewEnabled
     }
 
@@ -141,7 +149,9 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         // Begin a new session: reset accumulator counters to zero
         sessionAccumulator.reset()
 
-        // Register all ECS systems with the engine
+        // Register all ECS systems with the engine.
+        // PhysicsSystem is registered but disabled from automatic processing —
+        // it is called manually in the fixed-timestep loop below (issue #29).
         engine.addSystem(physicsSystem)
         engine.addSystem(collisionSystem)
         engine.addSystem(renderSystem)
@@ -150,6 +160,10 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         engine.addSystem(hudSystem)
         engine.addSystem(catcherSystem)
         engine.addSystem(trajectorySystem)
+
+        // Disable PhysicsSystem from engine.update() — this screen's fixed-timestep
+        // loop is the sole authority for physics ticking (issue #29).
+        physicsSystem.setProcessing(false)
 
         // Create the catcher NPC entity in the intersection
         createCatcherEntity()
@@ -194,31 +208,42 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         // 1. Poll input — InputRouter receives events via LibGDX InputProcessor callbacks.
         //    No explicit polling needed; events are dispatched by the framework.
 
-        // 2. Accumulate time for Box2D fixed-step coordination
+        // 2. Accumulate time for fixed-step physics coordination
         accumulator += delta
 
         // 3. Fixed-step physics + Box2D + collision (only during BALL_IN_FLIGHT)
-        //    PhysicsSystem has its own internal accumulator for physics updates.
-        //    Here we coordinate the Box2D world step and collision processing
-        //    on the same fixed timestep.
+        //    This loop is the sole authority for physics ticking (issue #29).
+        //    PhysicsSystem.setProcessing(false) prevents engine.update() from
+        //    double-stepping physics.
         if (gameStateManager.currentState is GameState.BallInFlight) {
+            // Spiral-of-death protection (issue #31): cap accumulated time so
+            // a long frame hitch doesn't cause dozens of catch-up iterations.
+            accumulator = minOf(accumulator, TuningConstants.FIXED_TIMESTEP * MAX_STEPS_PER_FRAME)
+
             while (accumulator >= TuningConstants.FIXED_TIMESTEP) {
-                // PhysicsSystem runs via engine.update() below.
-                // Step Box2D for collision detection.
+                // Game-space physics (gravity, drag, Magnus, position integration)
+                physicsSystem.update(TuningConstants.FIXED_TIMESTEP)
+                // Step Box2D for collision detection
                 world.step(TuningConstants.FIXED_TIMESTEP, 6, 2)
-                // Process contacts queued by PhysicsContactListener.
+                // Process contacts queued by PhysicsContactListener
                 collisionSystem.update(TuningConstants.FIXED_TIMESTEP)
                 accumulator -= TuningConstants.FIXED_TIMESTEP
             }
         } else {
-            // Drain accumulator when not in flight to prevent spiral-of-death
+            // Drain accumulator when not in flight to prevent stale time buildup
             accumulator = 0f
         }
 
-        // Run all ECS systems (PhysicsSystem handles its own fixed-timestep internally,
-        // RenderSystem draws, SpawnSystem manages lanes, InputSystem delegates to InputRouter,
-        // HudSystem renders the HUD via its own stage)
+        // Run all ECS systems except PhysicsSystem (disabled via setProcessing):
+        // RenderSystem draws, SpawnSystem manages lanes, InputSystem delegates to
+        // InputRouter, HudSystem renders the HUD via its own stage,
+        // TrajectorySystem.update() is a no-op (rendering deferred below).
         engine.update(delta)
+
+        // Render trajectory preview AFTER engine.update() so the SpriteBatch
+        // (used by RenderSystem) is no longer active. This prevents the
+        // ShapeRenderer/SpriteBatch conflict described in issue #26.
+        trajectorySystem.renderTrajectory(viewport.camera)
 
         // 4. Update state machine (timers for SCORING/IMPACT_MISSED transitions)
         gameStateManager.update(delta)
