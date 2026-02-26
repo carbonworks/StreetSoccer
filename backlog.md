@@ -7,12 +7,6 @@ Items are ordered by priority (top = do first). Tags indicate category. Wave ass
 | #  | Item | Tag | Wave |
 |----|------|-----|------|
 | 25 | Physics debug panel | dev-tool | Unassigned |
-| 32 | Decompose LevelScreen god object | refactor | → WP-26 (Wave 6) |
-| 36 | Cache ball entity reference in CollisionSystem | perf | → WP-27 (Wave 6) |
-| 39 | Add conditional logging to reduce GC pressure | perf | → WP-28 (Wave 6) |
-| 40 | Integrate level JSON parsing with LevelScreen | integration | → WP-26 (Wave 6) |
-| 41 | Remove fragile shadow detection heuristic | refactor | → WP-27 (Wave 6) |
-| 42 | Add AndroidLauncher lifecycle overrides | polish | → WP-29 (Wave 6) |
 | 10 | Big Bomb meteor feedback | feature | Wave 5+ |
 | 13 | Cosmetic & unlock system | feature | Wave 5+ |
 | 14 | Audio Spec | doc | Wave 5+ |
@@ -42,42 +36,6 @@ In-game panel for live-tuning all ball flight constants (gravity, max kick speed
 - Values can also be set by tapping the current value label and typing a number directly.
 
 **Persistence:** Override values are session-only by default (reset on app restart). The panel does not write to `TuningConstants.kt` or any save file.
-
-### 32. Decompose LevelScreen god object `refactor`
-
-LevelScreen is 410+ lines handling ECS setup, physics, input, pause overlay, save lifecycle, entity creation, and the render loop. Extract into: GameLoop (render/update coordination), ECSBootstrapper (engine + system setup), InputSetup (multiplexer wiring). Keep LevelScreen as a thin screen wrapper.
-
-**Files:** LevelScreen.kt
-
-### 36. Cache ball entity reference in CollisionSystem `perf`
-
-CollisionSystem and CatcherSystem iterate all entities each frame to find the ball via linear search. InputSystem already tracks `activeBallEntity`. Expose it or maintain a cached reference.
-
-**Files:** CollisionSystem.kt:180-196/207-226, CatcherSystem.kt:98-107
-
-### 39. Add conditional logging to reduce GC pressure `perf`
-
-Many Gdx.app.log() calls use string templates that allocate even when logging is disabled. Wrap in conditional checks or use lazy logging.
-
-**Files:** Multiple (GameBootstrapper.kt, LoadingScreen.kt, BackgroundRenderer.kt, InputSystem.kt)
-
-### 40. Integrate level JSON parsing with LevelScreen `integration`
-
-LoadingScreen parses suburban-crossroads.json and stores the result in getLevelData(), but no screen ever calls it. LevelLoader (mentioned in comments) doesn't exist. Level data is parsed but unused.
-
-**Files:** LoadingScreen.kt:131-142
-
-### 41. Remove fragile shadow detection heuristic `refactor`
-
-RenderSystem uses a fallback heuristic (renderLayer == 1 + black tint) to detect shadow entities when BallShadowComponent is missing. Should rely solely on BallShadowComponent tag and ensure InputSystem always adds it.
-
-**Files:** RenderSystem.kt:150-166
-
-### 42. Add AndroidLauncher lifecycle overrides `polish`
-
-AndroidLauncher only implements onCreate(). Adding explicit onPause/onResume/onDestroy overrides (even if just for logging) makes lifecycle debugging easier on-device.
-
-**Files:** AndroidLauncher.kt
 
 ### 10. Big Bomb meteor feedback `feature`
 
@@ -165,3 +123,9 @@ Reflect current mechanics (three-input model, 2-axis steer, diminishing returns,
 - [x] Detailed State Behavior Spec — Delivered in `state-machine.md`
 - [x] Update technical-architecture.md — Delivered as 12-section architecture spec
 - [x] Audio Spec implementation notes — AudioService interface with no-op placeholders wired into states (done in WP-0/WP-8)
+- [x] #32 — Decompose LevelScreen god object — Split into GameLoop.kt, ECSBootstrapper.kt, LevelData.kt + thin LevelScreen wrapper (WP-26, Wave 6)
+- [x] #36 — Cache ball entity reference — InputSystem.getActiveBall() used by CollisionSystem and CatcherSystem (WP-27, Wave 6)
+- [x] #39 — Conditional logging to reduce GC pressure — Wrapped template-based log calls in logLevel guards (WP-28, Wave 6)
+- [x] #40 — Integrate level JSON parsing — LevelData.fromJson() drives ECSBootstrapper entity creation (WP-26, Wave 6)
+- [x] #41 — Remove fragile shadow heuristic — RenderSystem uses only BallShadowComponent (WP-27, Wave 6)
+- [x] #42 — AndroidLauncher lifecycle overrides — onPause/onResume/onDestroy with Log.d() (WP-29, Wave 6)

@@ -346,7 +346,7 @@ Final debt clearance wave. All remaining P2/P3 items plus the LevelScreen decomp
 
 ### WP-26: LevelScreen Decomposition + Level JSON Integration
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #32 (decompose LevelScreen), #40 (integrate level JSON)
 **Owns:** `LevelScreen.kt` (restructure into thin wrapper), new `GameLoop.kt` (render/update coordination), new `ECSBootstrapper.kt` (engine + system setup + entity creation)
 **Reads:** `technical-architecture.md` (Section 7), `no-forward-debt.md`
@@ -366,7 +366,7 @@ Final debt clearance wave. All remaining P2/P3 items plus the LevelScreen decomp
 
 ### WP-27: Ball Entity Caching + Shadow Heuristic Removal
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #36 (cache ball entity), #41 (remove shadow heuristic)
 **Owns:** `CollisionSystem.kt` (cached ball ref), `CatcherSystem.kt` (cached ball ref), `RenderSystem.kt` (shadow rendering)
 **Reads:** `EntityExtensions.kt`, `no-forward-debt.md`
@@ -383,7 +383,7 @@ Final debt clearance wave. All remaining P2/P3 items plus the LevelScreen decomp
 
 ### WP-28: Conditional Logging
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #39 (reduce GC pressure from logging)
 **Owns:** `GameBootstrapper.kt` (logging), `LoadingScreen.kt` (logging), `BackgroundRenderer.kt` (logging), `InputSystem.kt` (logging)
 **Reads:** `no-forward-debt.md`
@@ -399,7 +399,7 @@ Final debt clearance wave. All remaining P2/P3 items plus the LevelScreen decomp
 
 ### WP-29: AndroidLauncher Lifecycle Overrides
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #42 (lifecycle overrides)
 **Owns:** `AndroidLauncher.kt`
 **Reads:** `no-forward-debt.md`
