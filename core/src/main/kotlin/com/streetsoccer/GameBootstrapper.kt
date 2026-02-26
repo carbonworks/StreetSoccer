@@ -1,5 +1,6 @@
 package com.streetsoccer
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.GL20
@@ -48,8 +49,10 @@ class GameBootstrapper : KtxGame<KtxScreen>() {
         // Load persisted data (gracefully falls back to defaults on missing/corrupt files)
         profile = saveService.loadProfile()
         settings = saveService.loadSettings()
-        Gdx.app.log("GameBootstrapper", "Profile loaded: totalKicks=${profile.career.totalKicks}, totalScore=${profile.career.totalScore}")
-        Gdx.app.log("GameBootstrapper", "Settings loaded: trajectoryPreview=${settings.trajectoryPreviewEnabled}, sliderSide=${settings.sliderSide}")
+        if (Gdx.app.logLevel >= Application.LOG_INFO) {
+            Gdx.app.log("GameBootstrapper", "Profile loaded: totalKicks=${profile.career.totalKicks}, totalScore=${profile.career.totalScore}")
+            Gdx.app.log("GameBootstrapper", "Settings loaded: trajectoryPreview=${settings.trajectoryPreviewEnabled}, sliderSide=${settings.sliderSide}")
+        }
 
         // Init audio with loaded volume settings
         audioService = AudioServiceImpl(
@@ -97,9 +100,13 @@ class GameBootstrapper : KtxGame<KtxScreen>() {
         try {
             saveService.saveProfile(profile)
             saveService.saveSettings(settings)
-            Gdx.app?.log("GameBootstrapper", "Save flushed: totalKicks=${profile.career.totalKicks}, totalScore=${profile.career.totalScore}")
+            if (Gdx.app?.logLevel ?: 0 >= Application.LOG_INFO) {
+                Gdx.app?.log("GameBootstrapper", "Save flushed: totalKicks=${profile.career.totalKicks}, totalScore=${profile.career.totalScore}")
+            }
         } catch (e: Exception) {
-            Gdx.app?.log("GameBootstrapper", "Failed to flush save: ${e.message}")
+            if (Gdx.app?.logLevel ?: 0 >= Application.LOG_INFO) {
+                Gdx.app?.log("GameBootstrapper", "Failed to flush save: ${e.message}")
+            }
         }
     }
 }

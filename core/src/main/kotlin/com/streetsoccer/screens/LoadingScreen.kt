@@ -1,5 +1,6 @@
 package com.streetsoccer.screens
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
@@ -50,7 +51,9 @@ class LoadingScreen(private val game: GameBootstrapper) : KtxScreen {
         for (path in layerPaths) {
             if (Gdx.files.internal(path).exists()) {
                 assets.load(path, Texture::class.java)
-                Gdx.app.log("LoadingScreen", "Queued background layer: $path")
+                if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                    Gdx.app.log("LoadingScreen", "Queued background layer: $path")
+                }
             }
         }
 
@@ -75,7 +78,9 @@ class LoadingScreen(private val game: GameBootstrapper) : KtxScreen {
             if (Gdx.files.internal(path).exists()) {
                 assets.load(path, Texture::class.java)
             } else {
-                Gdx.app.log("LoadingScreen", "$path not found — skipping")
+                if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                    Gdx.app.log("LoadingScreen", "$path not found — skipping")
+                }
             }
         }
     }
@@ -133,13 +138,19 @@ class LoadingScreen(private val game: GameBootstrapper) : KtxScreen {
         val levelFile = Gdx.files.internal("suburban-crossroads.json")
         if (levelFile.exists()) {
             levelData = JsonReader().parse(levelFile)
-            Gdx.app.log("LoadingScreen", "Level data parsed: ${levelData?.get("level_meta")?.getString("id")}")
+            if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                Gdx.app.log("LoadingScreen", "Level data parsed: ${levelData?.get("level_meta")?.getString("id")}")
+            }
             levelData?.let {
                 try {
                     game.levelData = LevelData.fromJson(it)
-                    Gdx.app.log("LoadingScreen", "LevelData stored in GameBootstrapper: ${game.levelData?.levelId}")
+                    if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                        Gdx.app.log("LoadingScreen", "LevelData stored in GameBootstrapper: ${game.levelData?.levelId}")
+                    }
                 } catch (e: Exception) {
-                    Gdx.app.log("LoadingScreen", "Failed to parse LevelData: ${e.message}")
+                    if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                        Gdx.app.log("LoadingScreen", "Failed to parse LevelData: ${e.message}")
+                    }
                 }
             }
         } else {

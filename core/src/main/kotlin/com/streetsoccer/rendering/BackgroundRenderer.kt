@@ -1,5 +1,6 @@
 package com.streetsoccer.rendering
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
@@ -97,12 +98,18 @@ class BackgroundRenderer(
                         setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
                     }
                     anyLayerFound = true
-                    Gdx.app.log(TAG, "Loaded layer: $path")
+                    if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                        Gdx.app.log(TAG, "Loaded layer: $path")
+                    }
                 } else {
-                    Gdx.app.log(TAG, "Layer not found: $path")
+                    if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                        Gdx.app.log(TAG, "Layer not found: $path")
+                    }
                 }
             } catch (e: Exception) {
-                Gdx.app.error(TAG, "Failed to load layer $path: ${e.message}")
+                if (Gdx.app.logLevel >= Application.LOG_ERROR) {
+                    Gdx.app.error(TAG, "Failed to load layer $path: ${e.message}")
+                }
             }
         }
 
@@ -120,12 +127,16 @@ class BackgroundRenderer(
                     setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
                 }
                 usingFallback = true
-                Gdx.app.log(TAG, "Loaded fallback: $FALLBACK_PATH")
+                if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                    Gdx.app.log(TAG, "Loaded fallback: $FALLBACK_PATH")
+                }
             } else {
                 Gdx.app.log(TAG, "No background assets found (neither layers nor fallback)")
             }
         } catch (e: Exception) {
-            Gdx.app.error(TAG, "Failed to load fallback $FALLBACK_PATH: ${e.message}")
+            if (Gdx.app.logLevel >= Application.LOG_ERROR) {
+                Gdx.app.error(TAG, "Failed to load fallback $FALLBACK_PATH: ${e.message}")
+            }
         }
     }
 

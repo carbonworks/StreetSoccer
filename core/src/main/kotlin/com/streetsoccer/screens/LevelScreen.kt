@@ -1,5 +1,6 @@
 package com.streetsoccer.screens
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
@@ -103,9 +104,18 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         try {
             game.profile = session.mergeInto(game.profile)
             game.saveService.saveProfile(game.profile)
+            if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                Gdx.app.log(
+                    "LevelScreen",
+                    "Session merged: sessionScore=${session.sessionScore}, " +
+                        "careerTotal=${game.profile.career.totalScore}"
+                )
+            }
             session.reset()
         } catch (e: Exception) {
-            Gdx.app.log("LevelScreen", "Failed to merge/save: ${e.message}")
+            if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                Gdx.app.log("LevelScreen", "Failed to merge/save: ${e.message}")
+            }
         }
     }
 }

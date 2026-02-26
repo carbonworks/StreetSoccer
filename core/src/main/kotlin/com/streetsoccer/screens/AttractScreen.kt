@@ -1,5 +1,6 @@
 package com.streetsoccer.screens
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
@@ -806,7 +807,9 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
                 Gdx.app.log("AttractScreen", "background.jpg not found — using solid color fallback")
             }
         } catch (e: Exception) {
-            Gdx.app.log("AttractScreen", "Failed to load background: ${e.message}")
+            if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                Gdx.app.log("AttractScreen", "Failed to load background: ${e.message}")
+            }
         }
     }
 
