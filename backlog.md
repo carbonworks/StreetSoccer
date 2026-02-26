@@ -7,23 +7,23 @@ Items are ordered by priority (top = do first). Tags indicate category. Wave ass
 | #  | Item | Tag | Wave |
 |----|------|-----|------|
 | 25 | Physics debug panel | dev-tool | Unassigned |
-| 26 | Fix TrajectorySystem rendering crash | bug/critical | Unassigned |
-| 27 | Fix font memory leaks in HudSystem and PauseOverlay | bug/critical | Unassigned |
-| 28 | Null-safe component accessors in EntityExtensions | bug/critical | Unassigned |
-| 29 | Resolve double physics accumulation | bug/critical | Unassigned |
-| 30 | Use cached component mappers instead of getComponent() | perf | Unassigned |
-| 31 | Add spiral-of-death protection to physics loop | bug | Unassigned |
-| 32 | Decompose LevelScreen god object | refactor | Unassigned |
-| 33 | Wire slider side setting into InputRouter | bug | Unassigned |
-| 34 | Centralize magic numbers into TuningConstants | refactor | Unassigned |
-| 35 | Enable ProGuard/R8 and add signing config | build | Unassigned |
-| 36 | Cache ball entity reference in CollisionSystem | perf | Unassigned |
-| 37 | Reset batch state after Stage.draw() in HudSystem | bug | Unassigned |
-| 38 | Reduce BitmapFont allocations in score popups | perf | Unassigned |
-| 39 | Add conditional logging to reduce GC pressure | perf | Unassigned |
-| 40 | Integrate level JSON parsing with LevelScreen | integration | Unassigned |
-| 41 | Remove fragile shadow detection heuristic | refactor | Unassigned |
-| 42 | Add AndroidLauncher lifecycle overrides | polish | Unassigned |
+| 26 | Fix TrajectorySystem rendering crash | bug/critical | → WP-21 (Wave 5) |
+| 27 | Fix font memory leaks in HudSystem and PauseOverlay | bug/critical | → WP-22 (Wave 5) |
+| 28 | Null-safe component accessors in EntityExtensions | bug/critical | → WP-23 (Wave 5) |
+| 29 | Resolve double physics accumulation | bug/critical | → WP-21 (Wave 5) |
+| 30 | Use cached component mappers instead of getComponent() | perf | → WP-23 (Wave 5) |
+| 31 | Add spiral-of-death protection to physics loop | bug | → WP-21 (Wave 5) |
+| 32 | Decompose LevelScreen god object | refactor | Wave 6 |
+| 33 | Wire slider side setting into InputRouter | bug | → WP-24 (Wave 5) |
+| 34 | Centralize magic numbers into TuningConstants | refactor | → WP-24 (Wave 5) |
+| 35 | Enable ProGuard/R8 and add signing config | build | → WP-25 (Wave 5) |
+| 36 | Cache ball entity reference in CollisionSystem | perf | → WP-25 (Wave 5) |
+| 37 | Reset batch state after Stage.draw() in HudSystem | bug | → WP-22 (Wave 5) |
+| 38 | Reduce BitmapFont allocations in score popups | perf | → WP-22 (Wave 5) |
+| 39 | Add conditional logging to reduce GC pressure | perf | Wave 6 |
+| 40 | Integrate level JSON parsing with LevelScreen | integration | Wave 6 |
+| 41 | Remove fragile shadow detection heuristic | refactor | Wave 6 |
+| 42 | Add AndroidLauncher lifecycle overrides | polish | Wave 6 |
 | 10 | Big Bomb meteor feedback | feature | Wave 5+ |
 | 13 | Cosmetic & unlock system | feature | Wave 5+ |
 | 14 | Audio Spec | doc | Wave 5+ |

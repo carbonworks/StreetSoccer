@@ -224,6 +224,136 @@ Fix swapped sin/cos in ball velocity calculation. For a straight-up flick (direc
 
 ---
 
+## Wave 5 — Debt Clearance (Per No-Forward-Debt Policy)
+
+Per `no-forward-debt.md`, all P0/Critical items must be resolved before new features.
+P1/Important items are included where they share file ownership with P0 fixes.
+
+### WP-21: LevelScreen Physics & Rendering Fixes
+
+**Status:** ready
+**Backlog items:** #26 (TrajectorySystem crash), #29 (double accumulation), #31 (spiral-of-death)
+**Owns:** `LevelScreen.kt` (render loop restructure), `TrajectorySystem.kt` (render phase change), `PhysicsSystem.kt` (accumulator removal)
+**Reads:** `physics-and-tuning.md`, `technical-architecture.md` (Section 7), `no-forward-debt.md`
+**Touches:** none
+**Depends on:** none
+
+**Scope:**
+1. **#26 — TrajectorySystem rendering crash:** Move trajectory preview rendering out of the ECS engine.update() call. TrajectorySystem should not render during RenderSystem's batch block. Options: (a) TrajectorySystem sets a flag and LevelScreen renders after engine.update(), or (b) TrajectorySystem manages its own render phase with proper batch/ShapeRenderer sequencing.
+2. **#29 — Double physics accumulation:** Remove the internal accumulator from PhysicsSystem. LevelScreen's fixed-timestep loop is authoritative. PhysicsSystem should accept a deltaTime and apply it once per call, not maintain its own accumulator.
+3. **#31 — Spiral-of-death protection:** Cap the accumulator in LevelScreen's fixed-step loop (e.g., `accumulator = minOf(accumulator, FIXED_TIMESTEP * 5)`) to prevent runaway iterations on frame hitches.
+
+**Acceptance:** TrajectorySystem renders without crashing. Physics steps exactly once per fixed timestep (no double-stepping). Frame hitches during flight don't cause cascading stutter.
+
+---
+
+### WP-22: HudSystem & PauseOverlay Resource Fixes
+
+**Status:** ready
+**Backlog items:** #27 (font leaks), #37 (batch state reset), #38 (popup font allocations)
+**Owns:** `HudSystem.kt` (font lifecycle, batch reset), `PauseOverlay.kt` (font disposal)
+**Reads:** `no-forward-debt.md`
+**Touches:** none
+**Depends on:** none
+
+**Scope:**
+1. **#27 — Font memory leaks:** Track all BitmapFont instances in HudSystem's `managedTextures` list (or a parallel `managedFonts` list) and dispose in `dispose()`. In PauseOverlay, add fonts to the managed disposal list.
+2. **#37 — Batch state reset:** After `stage.draw()` in HudSystem.update(), reset batch color to white and blend function to standard alpha.
+3. **#38 — Popup font allocations:** Replace per-popup `BitmapFont()` creation in `spawnScorePopup()` with a shared pre-allocated font instance.
+
+**Acceptance:** No BitmapFont leaks over a session. Batch state is clean after HUD rendering. Score popups reuse a shared font.
+
+---
+
+### WP-23: Null-Safe ECS Accessors & Cached Mappers
+
+**Status:** ready
+**Backlog items:** #28 (null-safe accessors), #30 (cached mappers)
+**Owns:** `EntityExtensions.kt` (nullable accessors), `PhysicsSystem.kt` (mapper usage), `CollisionSystem.kt` (mapper usage)
+**Reads:** `technical-architecture.md` (Section 4), `no-forward-debt.md`
+**Touches:** `LevelScreen.kt` (syncBox2DPositions mapper usage), `CatcherSystem.kt` (already uses mappers — verify), `InputSystem.kt` (already uses extensions — verify)
+**Depends on:** none
+
+**Scope:**
+1. **#28 — Null-safe accessors:** Change EntityExtensions properties to return nullable types (`TransformComponent?` instead of `TransformComponent`). Update all call sites to use safe calls (`?.`) or explicit checks.
+2. **#30 — Cached mappers:** Replace all `entity.getComponent(T::class.java)` calls in PhysicsSystem, CollisionSystem, and LevelScreen.syncBox2DPositions() with cached `mapperFor<T>()` accessors from EntityExtensions.
+
+**Acceptance:** No component access uses `getComponent()`. All extension properties return nullable types. No NPE risk from missing components.
+
+---
+
+### WP-24: InputRouter Slider Side & Magic Numbers
+
+**Status:** ready
+**Backlog items:** #33 (slider side wiring), #34 (centralize magic numbers)
+**Owns:** `InputRouter.kt` (slider side logic), `PhysicsContactListener.kt` (collision tolerance constant)
+**Reads:** `input-system.md`, `no-forward-debt.md`
+**Touches:** `TuningConstants.kt` (add new constants), `CollisionSystem.kt` (reference centralized bounds), `RenderSystem.kt` (reference centralized shadow dimensions)
+**Depends on:** none
+
+**Scope:**
+1. **#33 — Slider side wiring:** InputRouter must read `SettingsData.sliderSide` and position the slider zone on the correct edge. Add a `sliderSide` parameter or settings reference to InputRouter.
+2. **#34 — Centralize magic numbers:** Move scattered constants to TuningConstants or appropriate companion objects:
+   - `yDiff < 40f` → `TuningConstants.DEPTH_COLLISION_TOLERANCE`
+   - `SLIDER_ZONE_FRACTION` → stays in InputRouter but documented
+   - CollisionSystem bounds (MIN_X, MAX_X, etc.) → `TuningConstants` or CollisionSystem companion
+   - RenderSystem shadow dimensions → RenderSystem companion (already there, just verify)
+   - Deduplicate HORIZON_Y (one source of truth in TuningConstants)
+
+**Acceptance:** Slider side toggle in settings actually moves the slider. No magic numbers in method bodies — all named constants.
+
+---
+
+### WP-25: Build Config & Ball Entity Caching
+
+**Status:** ready
+**Backlog items:** #35 (ProGuard/signing), #36 (cache ball reference)
+**Owns:** `android/build.gradle.kts` (ProGuard, signing config)
+**Reads:** `no-forward-debt.md`
+**Touches:** `InputSystem.kt` (expose activeBallEntity getter — already exists), `CollisionSystem.kt` (use cached ball ref), `CatcherSystem.kt` (use cached ball ref)
+**Depends on:** none
+
+**Scope:**
+1. **#35 — ProGuard/R8:** Enable `isMinifyEnabled = true` for release builds. Create `proguard-rules.pro` with keep rules for LibGDX, Box2D, KTX, and Kotlin reflection. Add a placeholder signing config block (commented out with instructions).
+2. **#36 — Cache ball entity reference:** Instead of iterating all entities to find the ball each frame, have CollisionSystem and CatcherSystem obtain the ball entity from InputSystem's existing `getActiveBall()` method. Pass InputSystem reference or use a shared ball tracker.
+
+**Acceptance:** `./gradlew assembleRelease` produces a minified APK. No linear ball-entity search in CollisionSystem or CatcherSystem.
+
+---
+
+## Wave 5 Conflict Check
+
+- LevelScreen: only WP-21 (owns), WP-23 touches (syncBox2DPositions mapper change — small, additive)
+- PhysicsSystem: WP-21 owns, WP-23 touches (mapper change) — both change PhysicsSystem but WP-21 restructures accumulator while WP-23 changes component access; separable
+- HudSystem: only WP-22
+- PauseOverlay: only WP-22
+- EntityExtensions: only WP-23
+- CollisionSystem: WP-23 touches (mappers), WP-24 touches (bounds constants), WP-25 touches (ball caching) — three WPs touch but different code sections
+- InputRouter: only WP-24
+- TuningConstants: only WP-24 (adds constants)
+- build.gradle.kts: only WP-25
+- CatcherSystem: WP-23 touches (verify), WP-25 touches (ball caching) — different code sections
+
+**Acceptable overlaps:** CollisionSystem and CatcherSystem are touched by multiple WPs but in non-overlapping code sections (mapper usage vs. bounds constants vs. ball reference). Merge conflicts will be additive.
+
+**Excluded from Wave 5:** Items #32 (LevelScreen decomposition — too risky alongside #26/#29/#31 which restructure the same file), #39-42 (P3/polish — deferred per policy).
+
+---
+
+## Wave 6 Candidates (After Wave 5)
+
+| # | Item | Primary Files | Notes |
+|---|------|--------------|-------|
+| 32 | Decompose LevelScreen | LevelScreen.kt | Safe after WP-21 restructures render loop |
+| 25 | Physics debug panel | New files, HudSystem, TuningConstants | Feature — allowed after debt cleared |
+| 10 | Big Bomb meteor feedback | RenderSystem, HudSystem | Feature |
+| 39 | Conditional logging | Multiple files (read-only changes) | P3 polish |
+| 40 | Level JSON integration | LoadingScreen, LevelScreen | Integration |
+| 41 | Shadow heuristic removal | RenderSystem, InputSystem | Refactor |
+| 42 | AndroidLauncher overrides | AndroidLauncher.kt | Polish |
+
+---
+
 ## Wave 4 Conflict Check
 
 - AttractScreen: only WP-15
