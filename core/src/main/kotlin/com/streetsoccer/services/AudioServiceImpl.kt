@@ -1,5 +1,6 @@
 package com.streetsoccer.services
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.audio.Sound
 import kotlin.math.min
@@ -89,7 +90,9 @@ class AudioServiceImpl(
             val fileHandle = Gdx.files.internal(path)
             if (!fileHandle.exists()) {
                 if (cue !in warnedMissing) {
-                    Gdx.app?.log(TAG, "Sound asset not found: $path (playback will be skipped)")
+                    if (Gdx.app?.logLevel ?: 0 >= Application.LOG_INFO) {
+                        Gdx.app?.log(TAG, "Sound asset not found: $path (playback will be skipped)")
+                    }
                     warnedMissing.add(cue)
                 }
                 sounds[cue] = null
@@ -97,12 +100,16 @@ class AudioServiceImpl(
             } else {
                 val sound = Gdx.audio.newSound(fileHandle)
                 sounds[cue] = sound
-                Gdx.app?.log(TAG, "Loaded sound: $path")
+                if (Gdx.app?.logLevel ?: 0 >= Application.LOG_INFO) {
+                    Gdx.app?.log(TAG, "Loaded sound: $path")
+                }
                 sound
             }
         } catch (e: Exception) {
             if (cue !in warnedMissing) {
-                Gdx.app?.log(TAG, "Failed to load sound $path: ${e.message}")
+                if (Gdx.app?.logLevel ?: 0 >= Application.LOG_INFO) {
+                    Gdx.app?.log(TAG, "Failed to load sound $path: ${e.message}")
+                }
                 warnedMissing.add(cue)
             }
             sounds[cue] = null

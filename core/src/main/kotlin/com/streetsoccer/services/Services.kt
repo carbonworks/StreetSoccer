@@ -1,5 +1,6 @@
 package com.streetsoccer.services
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.files.FileHandle
 import kotlinx.serialization.Serializable
@@ -331,9 +332,13 @@ class SaveService {
                 corrupt.delete()
             }
             primary.file().renameTo(corrupt.file())
-            Gdx.app?.log("SaveService", "Corrupt $label file backed up to ${corrupt.name()}")
+            if (Gdx.app?.logLevel ?: 0 >= Application.LOG_INFO) {
+                Gdx.app?.log("SaveService", "Corrupt $label file backed up to ${corrupt.name()}")
+            }
         } catch (e: Exception) {
-            Gdx.app?.log("SaveService", "Failed to backup corrupt $label file: ${e.message}")
+            if (Gdx.app?.logLevel ?: 0 >= Application.LOG_INFO) {
+                Gdx.app?.log("SaveService", "Failed to backup corrupt $label file: ${e.message}")
+            }
         }
     }
 }

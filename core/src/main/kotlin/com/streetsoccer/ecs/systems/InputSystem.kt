@@ -3,6 +3,7 @@ package com.streetsoccer.ecs.systems
 import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.Entity
 import com.badlogic.ashley.core.EntitySystem
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.Texture
@@ -129,7 +130,9 @@ class InputSystem(
 
         if (isBigBombActive) {
             val source = if (bombModeOverride && !meetsThresholds) "bomb mode button" else "thresholds"
-            Gdx.app.log(TAG, "Big Bomb activated via $source! power=${flickResult.power}, slider=${flickResult.sliderValue}")
+            if (Gdx.app.logLevel >= Application.LOG_INFO) {
+                Gdx.app.log(TAG, "Big Bomb activated via $source! power=${flickResult.power}, slider=${flickResult.sliderValue}")
+            }
             audioService.playBigBombActivation()
         }
 
@@ -196,8 +199,10 @@ class InputSystem(
         engine.addEntity(ballEntity)
         activeBallEntity = ballEntity
 
-        Gdx.app.log(TAG, "Ball spawned: vx=$vx, vy=$vy, vz=$vz, power=${flickResult.power}, " +
-                "slider=${flickResult.sliderValue}, launchAngle=${Math.toDegrees(launchAngleRad.toDouble())}°")
+        if (Gdx.app.logLevel >= Application.LOG_INFO) {
+            Gdx.app.log(TAG, "Ball spawned: vx=$vx, vy=$vy, vz=$vz, power=${flickResult.power}, " +
+                    "slider=${flickResult.sliderValue}, launchAngle=${Math.toDegrees(launchAngleRad.toDouble())}°")
+        }
 
         // --- Create ball shadow entity ---
         createShadowEntity(engine)
