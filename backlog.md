@@ -7,12 +7,12 @@ Items are ordered by priority (top = do first). Tags indicate category. Wave ass
 | #  | Item | Tag | Wave |
 |----|------|-----|------|
 | 25 | Physics debug panel | dev-tool | Unassigned |
-| 32 | Decompose LevelScreen god object | refactor | Wave 6 |
-| 36 | Cache ball entity reference in CollisionSystem | perf | Wave 6 |
-| 39 | Add conditional logging to reduce GC pressure | perf | Wave 6 |
-| 40 | Integrate level JSON parsing with LevelScreen | integration | Wave 6 |
-| 41 | Remove fragile shadow detection heuristic | refactor | Wave 6 |
-| 42 | Add AndroidLauncher lifecycle overrides | polish | Wave 6 |
+| 32 | Decompose LevelScreen god object | refactor | → WP-26 (Wave 6) |
+| 36 | Cache ball entity reference in CollisionSystem | perf | → WP-27 (Wave 6) |
+| 39 | Add conditional logging to reduce GC pressure | perf | → WP-28 (Wave 6) |
+| 40 | Integrate level JSON parsing with LevelScreen | integration | → WP-26 (Wave 6) |
+| 41 | Remove fragile shadow detection heuristic | refactor | → WP-27 (Wave 6) |
+| 42 | Add AndroidLauncher lifecycle overrides | polish | → WP-29 (Wave 6) |
 | 10 | Big Bomb meteor feedback | feature | Wave 5+ |
 | 13 | Cosmetic & unlock system | feature | Wave 5+ |
 | 14 | Audio Spec | doc | Wave 5+ |

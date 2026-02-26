@@ -340,30 +340,90 @@ P1/Important items are included where they share file ownership with P0 fixes.
 
 ---
 
-## Wave 6 Candidates (After Wave 5)
+## Wave 6 — Remaining Debt + Polish
 
-| # | Item | Primary Files | Notes |
-|---|------|--------------|-------|
-| 32 | Decompose LevelScreen | LevelScreen.kt | Safe after WP-21 restructures render loop |
-| 25 | Physics debug panel | New files, HudSystem, TuningConstants | Feature — allowed after debt cleared |
-| 10 | Big Bomb meteor feedback | RenderSystem, HudSystem | Feature |
-| 39 | Conditional logging | Multiple files (read-only changes) | P3 polish |
-| 40 | Level JSON integration | LoadingScreen, LevelScreen | Integration |
-| 41 | Shadow heuristic removal | RenderSystem, InputSystem | Refactor |
-| 42 | AndroidLauncher overrides | AndroidLauncher.kt | Polish |
+Final debt clearance wave. All remaining P2/P3 items plus the LevelScreen decomposition.
+
+### WP-26: LevelScreen Decomposition + Level JSON Integration
+
+**Status:** ready
+**Backlog items:** #32 (decompose LevelScreen), #40 (integrate level JSON)
+**Owns:** `LevelScreen.kt` (restructure into thin wrapper), new `GameLoop.kt` (render/update coordination), new `ECSBootstrapper.kt` (engine + system setup + entity creation)
+**Reads:** `technical-architecture.md` (Section 7), `no-forward-debt.md`
+**Touches:** `LoadingScreen.kt` (expose level data for LevelScreen to consume)
+**Depends on:** none
+
+**Scope:**
+1. **#32 — Decompose LevelScreen:** Extract from the 440-line god object into:
+   - `GameLoop.kt` — owns the render/update cycle: background rendering, fixed-timestep physics loop, engine.update(), trajectory rendering, state machine update, Box2D sync, HUD wiring, pause overlay rendering. Receives all systems and managers as constructor params.
+   - `ECSBootstrapper.kt` — creates and configures the Engine, registers all systems, creates the catcher entity, creates the InputMultiplexer. Returns a bundle of references (engine, systems, inputMultiplexer) for GameLoop.
+   - `LevelScreen.kt` — thin KtxScreen wrapper: creates GameStateManager, SessionAccumulator, World, SpriteBatch, viewport, BackgroundRenderer, InputRouter, PauseOverlay. Delegates to ECSBootstrapper in `show()` and GameLoop in `render()`. Handles lifecycle (hide/pause/dispose).
+2. **#40 — Level JSON integration:** Make LevelScreen read level data from `LoadingScreen.getLevelData()` (or equivalent) and pass catcher position, spawn lane config, and collider geometry to ECSBootstrapper instead of hardcoding (960, 400) etc.
+
+**Acceptance:** LevelScreen is under 120 lines. GameLoop and ECSBootstrapper each have clear single responsibilities. Level JSON data drives entity creation. Build passes. Game plays identically to before.
 
 ---
 
-## Wave 4 Conflict Check
+### WP-27: Ball Entity Caching + Shadow Heuristic Removal
 
-- AttractScreen: only WP-15
-- HudSystem: only WP-16
-- InputSystem: WP-16 (bomb mode flag), WP-20 (velocity fix) — different code sections, acceptable
-- RenderSystem: WP-17 touches, WP-18 touches — different code paths (preview arc vs. layer ordering), acceptable
-- LevelScreen: WP-16, WP-17, WP-18 all touch — additive registrations, acceptable
-- Art assets: WP-18 and WP-19 both modify background layers but WP-19 is asset-only with no code overlap
+**Status:** ready
+**Backlog items:** #36 (cache ball entity), #41 (remove shadow heuristic)
+**Owns:** `CollisionSystem.kt` (cached ball ref), `CatcherSystem.kt` (cached ball ref), `RenderSystem.kt` (shadow rendering)
+**Reads:** `EntityExtensions.kt`, `no-forward-debt.md`
+**Touches:** `InputSystem.kt` (expose `activeBallEntity` getter)
+**Depends on:** none
 
-**Excluded from Wave 4:** Big Bomb meteor feedback (conflicts with WP-17 on RenderSystem), Cosmetic system (too broad, conflicts with many files)
+**Scope:**
+1. **#36 — Cache ball entity reference:** Add a public `getActiveBall(): Entity?` method to InputSystem that returns the currently tracked ball entity (already stored as `activeBallEntity`). CollisionSystem and CatcherSystem should call this instead of iterating all entities with `velocityCmpMapper.has()`. Fall back to linear search only if `getActiveBall()` returns null.
+2. **#41 — Remove shadow heuristic:** In RenderSystem, remove the fallback heuristic that detects shadows via `renderLayer == 1 + black tint`. Use `ballShadowCmpMapper.has(entity)` exclusively. Verify InputSystem always adds BallShadowComponent when creating the ball shadow entity.
+
+**Acceptance:** CollisionSystem and CatcherSystem use cached ball reference. RenderSystem shadow rendering uses only BallShadowComponent — no heuristic fallback. Build passes.
+
+---
+
+### WP-28: Conditional Logging
+
+**Status:** ready
+**Backlog items:** #39 (reduce GC pressure from logging)
+**Owns:** `GameBootstrapper.kt` (logging), `LoadingScreen.kt` (logging), `BackgroundRenderer.kt` (logging), `InputSystem.kt` (logging)
+**Reads:** `no-forward-debt.md`
+**Touches:** none
+**Depends on:** none
+
+**Scope:**
+1. **#39 — Conditional logging:** Wrap all `Gdx.app.log()` calls that use string templates (`"value=$x"`) in conditional checks: `if (Gdx.app.logLevel >= Application.LOG_INFO)`. This prevents string allocation and concatenation when logging is disabled. Apply across GameBootstrapper.kt, LoadingScreen.kt, BackgroundRenderer.kt, and InputSystem.kt. Also check LevelScreen.kt and any other files with template-based log calls.
+
+**Acceptance:** No string template allocations occur in log calls when logging is disabled. Build passes. Log output is unchanged when logging is enabled.
+
+---
+
+### WP-29: AndroidLauncher Lifecycle Overrides
+
+**Status:** ready
+**Backlog items:** #42 (lifecycle overrides)
+**Owns:** `AndroidLauncher.kt`
+**Reads:** `no-forward-debt.md`
+**Touches:** none
+**Depends on:** none
+
+**Scope:**
+1. **#42 — Lifecycle overrides:** Add explicit `onPause()`, `onResume()`, and `onDestroy()` overrides to AndroidLauncher. Each should call `super` and log a message via `Gdx.app.log()` (or `android.util.Log` if Gdx is not yet initialized in onDestroy). This makes lifecycle transitions visible in logcat for on-device debugging.
+
+**Acceptance:** AndroidLauncher has all 4 lifecycle methods (onCreate, onPause, onResume, onDestroy). Each logs a message. Build passes. App launches and backgrounds correctly on device.
+
+---
+
+### Wave 6 Conflict Check
+
+- LevelScreen.kt: only WP-26 (owns)
+- CollisionSystem.kt: only WP-27 (owns)
+- CatcherSystem.kt: only WP-27 (owns)
+- RenderSystem.kt: only WP-27 (owns)
+- InputSystem.kt: WP-27 touches (add getter), WP-28 touches (logging) — different code sections, acceptable
+- LoadingScreen.kt: WP-26 touches (expose level data), WP-28 owns (logging) — different code sections, acceptable
+- GameBootstrapper.kt: only WP-28 (owns)
+- BackgroundRenderer.kt: only WP-28 (owns)
+- AndroidLauncher.kt: only WP-29 (owns)
 
 ---
 
