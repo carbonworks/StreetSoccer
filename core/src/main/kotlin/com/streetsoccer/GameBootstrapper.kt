@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20
 import com.streetsoccer.screens.AttractScreen
 import com.streetsoccer.screens.LevelScreen
 import com.streetsoccer.screens.LoadingScreen
+import com.streetsoccer.level.LevelData
 import com.streetsoccer.services.AudioService
 import com.streetsoccer.services.AudioServiceImpl
 import com.streetsoccer.services.ProfileData
@@ -30,6 +31,10 @@ class GameBootstrapper : KtxGame<KtxScreen>() {
 
     /** In-memory settings loaded at startup; updated when settings change. */
     var settings: SettingsData = SettingsData()
+        internal set
+
+    /** Parsed level data set by LoadingScreen after parsing suburban-crossroads.json. */
+    var levelData: LevelData? = null
         internal set
 
     override fun create() {

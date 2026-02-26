@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.JsonReader
 import com.badlogic.gdx.utils.JsonValue
 import com.streetsoccer.GameBootstrapper
+import com.streetsoccer.level.LevelData
 import ktx.app.KtxScreen
 
 /**
@@ -125,14 +126,22 @@ class LoadingScreen(private val game: GameBootstrapper) : KtxScreen {
 
     /**
      * Parse suburban-crossroads.json and store the result so other systems
-     * can access the level data. The actual entity creation from this data
-     * is handled by LevelLoader when LevelScreen initializes.
+     * can access the level data. The parsed LevelData is stored in
+     * GameBootstrapper for LevelScreen to consume via ECSBootstrapper.
      */
     private fun parseLevelData() {
         val levelFile = Gdx.files.internal("suburban-crossroads.json")
         if (levelFile.exists()) {
             levelData = JsonReader().parse(levelFile)
             Gdx.app.log("LoadingScreen", "Level data parsed: ${levelData?.get("level_meta")?.getString("id")}")
+            levelData?.let {
+                try {
+                    game.levelData = LevelData.fromJson(it)
+                    Gdx.app.log("LoadingScreen", "LevelData stored in GameBootstrapper: ${game.levelData?.levelId}")
+                } catch (e: Exception) {
+                    Gdx.app.log("LoadingScreen", "Failed to parse LevelData: ${e.message}")
+                }
+            }
         } else {
             Gdx.app.log("LoadingScreen", "suburban-crossroads.json not found — level data unavailable")
         }
