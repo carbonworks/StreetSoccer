@@ -214,8 +214,8 @@ class CollisionSystem(
 
                 if (transform.height <= STOPPED_HEIGHT_THRESHOLD) {
                     val speed = kotlin.math.sqrt(
-                        velocity.vx * velocity.vx + velocity.vy * velocity.vy + velocity.vz * velocity.vz
-                    )
+                        (velocity.vx * velocity.vx + velocity.vy * velocity.vy + velocity.vz * velocity.vz).toDouble()
+                    ).toFloat()
                     if (speed < STOPPED_SPEED_THRESHOLD) {
                         sessionAccumulator.breakStreak()
                         gameStateManager.transitionTo(GameState.ImpactMissed)
