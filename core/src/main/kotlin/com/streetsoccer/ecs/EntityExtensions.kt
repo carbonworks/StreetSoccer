@@ -15,29 +15,29 @@ val targetCmpMapper = mapperFor<TargetComponent>()
 val ballShadowCmpMapper = mapperFor<BallShadowComponent>()
 val catcherCmpMapper = mapperFor<CatcherComponent>()
 
-val Entity.transform: TransformComponent
+val Entity.transform: TransformComponent?
     get() = transformCmpMapper.get(this)
 
-val Entity.velocity: VelocityComponent
+val Entity.velocity: VelocityComponent?
     get() = velocityCmpMapper.get(this)
 
-val Entity.spin: SpinComponent
+val Entity.spin: SpinComponent?
     get() = spinCmpMapper.get(this)
 
-val Entity.visual: VisualComponent
+val Entity.visual: VisualComponent?
     get() = visualCmpMapper.get(this)
 
-val Entity.collider: ColliderComponent
+val Entity.collider: ColliderComponent?
     get() = colliderCmpMapper.get(this)
 
-val Entity.spawnLane: SpawnLaneComponent
+val Entity.spawnLane: SpawnLaneComponent?
     get() = spawnLaneCmpMapper.get(this)
 
-val Entity.target: TargetComponent
+val Entity.target: TargetComponent?
     get() = targetCmpMapper.get(this)
 
-val Entity.ballShadow: BallShadowComponent
+val Entity.ballShadow: BallShadowComponent?
     get() = ballShadowCmpMapper.get(this)
 
-val Entity.catcher: CatcherComponent
+val Entity.catcher: CatcherComponent?
     get() = catcherCmpMapper.get(this)
