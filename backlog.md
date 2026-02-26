@@ -7,19 +7,8 @@ Items are ordered by priority (top = do first). Tags indicate category. Wave ass
 | #  | Item | Tag | Wave |
 |----|------|-----|------|
 | 25 | Physics debug panel | dev-tool | Unassigned |
-| 26 | Fix TrajectorySystem rendering crash | bug/critical | → WP-21 (Wave 5) |
-| 27 | Fix font memory leaks in HudSystem and PauseOverlay | bug/critical | → WP-22 (Wave 5) |
-| 28 | Null-safe component accessors in EntityExtensions | bug/critical | → WP-23 (Wave 5) |
-| 29 | Resolve double physics accumulation | bug/critical | → WP-21 (Wave 5) |
-| 30 | Use cached component mappers instead of getComponent() | perf | → WP-23 (Wave 5) |
-| 31 | Add spiral-of-death protection to physics loop | bug | → WP-21 (Wave 5) |
 | 32 | Decompose LevelScreen god object | refactor | Wave 6 |
-| 33 | Wire slider side setting into InputRouter | bug | → WP-24 (Wave 5) |
-| 34 | Centralize magic numbers into TuningConstants | refactor | → WP-24 (Wave 5) |
-| 35 | Enable ProGuard/R8 and add signing config | build | → WP-25 (Wave 5) |
-| 36 | Cache ball entity reference in CollisionSystem | perf | → WP-25 (Wave 5) |
-| 37 | Reset batch state after Stage.draw() in HudSystem | bug | → WP-22 (Wave 5) |
-| 38 | Reduce BitmapFont allocations in score popups | perf | → WP-22 (Wave 5) |
+| 36 | Cache ball entity reference in CollisionSystem | perf | Wave 6 |
 | 39 | Add conditional logging to reduce GC pressure | perf | Wave 6 |
 | 40 | Integrate level JSON parsing with LevelScreen | integration | Wave 6 |
 | 41 | Remove fragile shadow detection heuristic | refactor | Wave 6 |
@@ -54,83 +43,17 @@ In-game panel for live-tuning all ball flight constants (gravity, max kick speed
 
 **Persistence:** Override values are session-only by default (reset on app restart). The panel does not write to `TuningConstants.kt` or any save file.
 
-### 26. Fix TrajectorySystem rendering crash `bug/critical`
-
-TrajectorySystem uses ShapeRenderer.begin() while RenderSystem's SpriteBatch is still active (between batch.begin/end). Mixing ShapeRenderer inside an active SpriteBatch block causes crashes or undefined behavior. Fix: move trajectory rendering to a separate phase in LevelScreen.render() after engine.update(), or have TrajectorySystem render independently outside the batch block.
-
-**Files:** TrajectorySystem.kt:203-243, LevelScreen.kt render loop
-
-### 27. Fix font memory leaks in HudSystem and PauseOverlay `bug/critical`
-
-HudSystem.spawnScorePopup() creates a new BitmapFont() per popup and never disposes it — unbounded leak over a session. PauseOverlay creates ~3 BitmapFont instances without disposal tracking. Fix: pre-allocate shared fonts or add them to the managed disposal lists.
-
-**Files:** HudSystem.kt:680, PauseOverlay.kt:78/119/120
-
-### 28. Null-safe component accessors in EntityExtensions `bug/critical`
-
-Extension properties like `Entity.transform` use `mapperFor<>().get()` without null checks. If an entity lacks the component, this crashes with NPE. Change to nullable return types or add assertions.
-
-**Files:** EntityExtensions.kt:18-43
-
-### 29. Resolve double physics accumulation `bug/critical`
-
-Both LevelScreen (lines 205-212) and PhysicsSystem (internal accumulator) maintain independent fixed-timestep loops. This creates risk of double-stepping or desync. Clarify ownership: either LevelScreen or PhysicsSystem should own the accumulator, not both.
-
-**Files:** LevelScreen.kt:197-221, PhysicsSystem.kt:18-24
-
-### 30. Use cached component mappers instead of getComponent() `perf`
-
-PhysicsSystem, CollisionSystem, and LevelScreen.syncBox2DPositions() use reflection-based `entity.getComponent()` per frame instead of cached `mapperFor<>()` accessors. Causes unnecessary overhead on every entity every frame.
-
-**Files:** PhysicsSystem.kt:27-29, CollisionSystem.kt:119/185/211/215, LevelScreen.kt:322
-
-### 31. Add spiral-of-death protection to physics loop `bug`
-
-During BALL_IN_FLIGHT, if the game hitches the accumulator grows unbounded and the while loop iterates many times, causing further frame stutter. Add a max-iteration cap or clamp the accumulator.
-
-**Files:** LevelScreen.kt:205-212
-
 ### 32. Decompose LevelScreen god object `refactor`
 
 LevelScreen is 410+ lines handling ECS setup, physics, input, pause overlay, save lifecycle, entity creation, and the render loop. Extract into: GameLoop (render/update coordination), ECSBootstrapper (engine + system setup), InputSetup (multiplexer wiring). Keep LevelScreen as a thin screen wrapper.
 
 **Files:** LevelScreen.kt
 
-### 33. Wire slider side setting into InputRouter `bug`
-
-InputRouter always assumes the angle slider is on the left side (SLIDER_ZONE_FRACTION = 10% of left edge). The SettingsData.sliderSide property is never read. When the user toggles to "right" in settings, nothing changes.
-
-**Files:** InputRouter.kt:20, SettingsData
-
-### 34. Centralize magic numbers into TuningConstants `refactor`
-
-Scattered magic numbers: `yDiff < 40f` in PhysicsContactListener (collision tolerance), `SLIDER_ZONE_FRACTION` in InputRouter, bounds in CollisionSystem (MIN_X=-100, MAX_X=2020), shadow texture dimensions (64x32) in RenderSystem, duplicate HORIZON_Y=540f in InputSystem and CollisionSystem.
-
-**Files:** PhysicsContactListener.kt:29, InputRouter.kt:20, CollisionSystem.kt:38-49, RenderSystem.kt:54-65
-
-### 35. Enable ProGuard/R8 and add signing config `build`
-
-`isMinifyEnabled = false` in release build type. No `signingConfigs` block defined. Release builds are unoptimized and cannot be created without manual signing.
-
-**Files:** android/build.gradle.kts:27-31
-
 ### 36. Cache ball entity reference in CollisionSystem `perf`
 
 CollisionSystem and CatcherSystem iterate all entities each frame to find the ball via linear search. InputSystem already tracks `activeBallEntity`. Expose it or maintain a cached reference.
 
 **Files:** CollisionSystem.kt:180-196/207-226, CatcherSystem.kt:98-107
-
-### 37. Reset batch state after Stage.draw() in HudSystem `bug`
-
-After HudSystem's stage.draw(), the batch color and blend state may be left dirty for subsequent renders. Add explicit batch state reset after stage rendering.
-
-**Files:** HudSystem.kt:416
-
-### 38. Reduce BitmapFont allocations in score popups `perf`
-
-HudSystem.spawnScorePopup() allocates a new BitmapFont per popup. If 50+ popups spawn per session, this stresses GC. Pre-allocate a shared font or use a font pool. (Related to #27 but focused on the performance angle.)
-
-**Files:** HudSystem.kt:677-725
 
 ### 39. Add conditional logging to reduce GC pressure `perf`
 
@@ -221,6 +144,17 @@ Reflect current mechanics (three-input model, 2-axis steer, diminishing returns,
 - [x] #9 — Trajectory preview rendering — Dotted arc during AIMING, respects settings (WP-17, Wave 4)
 - [x] #11 — Separate buildings from background — BackgroundRenderer with layered loading (WP-18, Wave 4)
 - [x] #12 — Flatten front-left hill — Art documentation delivered (WP-19, Wave 4)
+- [x] #26 — Fix TrajectorySystem rendering crash — Deferred rendering after engine.update() (WP-21, Wave 5)
+- [x] #27 — Fix font memory leaks in HudSystem and PauseOverlay — Managed font lists with disposal (WP-22, Wave 5)
+- [x] #28 — Null-safe component accessors in EntityExtensions — All 9 accessors return nullable (WP-23, Wave 5)
+- [x] #29 — Resolve double physics accumulation — Removed PhysicsSystem internal accumulator (WP-21, Wave 5)
+- [x] #30 — Use cached component mappers — Replaced all getComponent() with mapperFor<>() (WP-23, Wave 5)
+- [x] #31 — Spiral-of-death protection — MAX_STEPS_PER_FRAME cap in LevelScreen (WP-21, Wave 5)
+- [x] #33 — Wire slider side setting into InputRouter — isInSliderZone() with left/right support (WP-24, Wave 5)
+- [x] #34 — Centralize magic numbers — HORIZON_Y, DEPTH_COLLISION_TOLERANCE in TuningConstants (WP-24, Wave 5)
+- [x] #35 — Enable ProGuard/R8 and add signing config — isMinifyEnabled=true, proguard-rules.pro (WP-25, Wave 5)
+- [x] #37 — Reset batch state after Stage.draw() — drawStageAndResetBatch() helper in HudSystem (WP-22, Wave 5)
+- [x] #38 — Reduce BitmapFont allocations in score popups — Shared popupFont instance (WP-22, Wave 5)
 - [x] Update technical-architecture.md — Add input handling architecture and physics constants — Delivered as standalone specs: `input-system.md` and `physics-and-tuning.md`
 - [x] Physics tuning guide — Define actual constants for gravity, drag, Magnus scaling, spin decay rate — Delivered as `physics-and-tuning.md`
 - [x] Update game-mechanics-overview.md — Sync with the new flick+steer+angle slider mechanics, 2-axis steer, diminishing returns, and ball shadow

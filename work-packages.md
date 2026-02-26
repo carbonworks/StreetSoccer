@@ -231,7 +231,7 @@ P1/Important items are included where they share file ownership with P0 fixes.
 
 ### WP-21: LevelScreen Physics & Rendering Fixes
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #26 (TrajectorySystem crash), #29 (double accumulation), #31 (spiral-of-death)
 **Owns:** `LevelScreen.kt` (render loop restructure), `TrajectorySystem.kt` (render phase change), `PhysicsSystem.kt` (accumulator removal)
 **Reads:** `physics-and-tuning.md`, `technical-architecture.md` (Section 7), `no-forward-debt.md`
@@ -249,7 +249,7 @@ P1/Important items are included where they share file ownership with P0 fixes.
 
 ### WP-22: HudSystem & PauseOverlay Resource Fixes
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #27 (font leaks), #37 (batch state reset), #38 (popup font allocations)
 **Owns:** `HudSystem.kt` (font lifecycle, batch reset), `PauseOverlay.kt` (font disposal)
 **Reads:** `no-forward-debt.md`
@@ -267,7 +267,7 @@ P1/Important items are included where they share file ownership with P0 fixes.
 
 ### WP-23: Null-Safe ECS Accessors & Cached Mappers
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #28 (null-safe accessors), #30 (cached mappers)
 **Owns:** `EntityExtensions.kt` (nullable accessors), `PhysicsSystem.kt` (mapper usage), `CollisionSystem.kt` (mapper usage)
 **Reads:** `technical-architecture.md` (Section 4), `no-forward-debt.md`
@@ -284,7 +284,7 @@ P1/Important items are included where they share file ownership with P0 fixes.
 
 ### WP-24: InputRouter Slider Side & Magic Numbers
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #33 (slider side wiring), #34 (centralize magic numbers)
 **Owns:** `InputRouter.kt` (slider side logic), `PhysicsContactListener.kt` (collision tolerance constant)
 **Reads:** `input-system.md`, `no-forward-debt.md`
@@ -306,7 +306,7 @@ P1/Important items are included where they share file ownership with P0 fixes.
 
 ### WP-25: Build Config & Ball Entity Caching
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #35 (ProGuard/signing), #36 (cache ball reference)
 **Owns:** `android/build.gradle.kts` (ProGuard, signing config)
 **Reads:** `no-forward-debt.md`
