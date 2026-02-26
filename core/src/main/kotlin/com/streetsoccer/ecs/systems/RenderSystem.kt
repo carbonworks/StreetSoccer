@@ -36,10 +36,10 @@ class RenderSystem(
 ) : SortedIteratingSystem(
     allOf(TransformComponent::class, VisualComponent::class).get(),
     Comparator<Entity> { e1, e2 ->
-        val v1 = e1.visual
-        val v2 = e2.visual
-        val t1 = e1.transform
-        val t2 = e2.transform
+        val v1 = e1.visual ?: return@Comparator 0
+        val v2 = e2.visual ?: return@Comparator 0
+        val t1 = e1.transform ?: return@Comparator 0
+        val t2 = e2.transform ?: return@Comparator 0
 
         // Z-layer sort first (layer 0 = foreground, layer 4 = sky)
         val layerDiff = v2.renderLayer.compareTo(v1.renderLayer)
@@ -118,8 +118,8 @@ class RenderSystem(
     }
 
     override fun processEntity(entity: Entity, deltaTime: Float) {
-        val visual = entity.visual
-        val transform = entity.transform
+        val visual = entity.visual ?: return
+        val transform = entity.transform ?: return
 
         // Determine which texture region to use for this entity.
         val region = visual.region ?: getShadowRegionIfApplicable(entity, visual) ?: return

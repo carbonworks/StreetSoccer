@@ -5,7 +5,7 @@ import com.badlogic.gdx.physics.box2d.ContactImpulse
 import com.badlogic.gdx.physics.box2d.ContactListener
 import com.badlogic.gdx.physics.box2d.Manifold
 import com.badlogic.ashley.core.Entity
-import com.streetsoccer.ecs.components.TransformComponent
+import com.streetsoccer.ecs.transform
 
 class PhysicsContactListener : ContactListener {
     // Array to queue up collisions for the system to process later on the main thread
@@ -20,8 +20,8 @@ class PhysicsContactListener : ContactListener {
 
         if (entityA != null && entityB != null) {
             // Need to apply Z-depth filtering to verify collision
-            val transformA = entityA.getComponent(TransformComponent::class.java)
-            val transformB = entityB.getComponent(TransformComponent::class.java)
+            val transformA = entityA.transform
+            val transformB = entityB.transform
 
             if (transformA != null && transformB != null) {
                 // If they intersect on Y and Height limits overlap, it's valid

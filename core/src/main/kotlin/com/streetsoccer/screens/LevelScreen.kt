@@ -16,10 +16,12 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.World
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.streetsoccer.GameBootstrapper
+import com.streetsoccer.ecs.collider
 import com.streetsoccer.ecs.components.CatcherComponent
 import com.streetsoccer.ecs.components.ColliderComponent
 import com.streetsoccer.ecs.components.TransformComponent
 import com.streetsoccer.ecs.components.VisualComponent
+import com.streetsoccer.ecs.transform
 import com.streetsoccer.ecs.systems.CatcherSystem
 import com.streetsoccer.ecs.systems.CollisionSystem
 import com.streetsoccer.ecs.systems.HudSystem
@@ -344,13 +346,13 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         val entities = engine.getEntitiesFor(family)
         for (i in 0 until entities.size()) {
             val entity = entities[i]
-            val transform = entity.getComponent(TransformComponent::class.java)
-            val collider = entity.getComponent(ColliderComponent::class.java)
-            val body = collider.body ?: continue
+            val tc = entity.transform ?: continue
+            val cc = entity.collider ?: continue
+            val body = cc.body ?: continue
             // Convert game-space pixels to Box2D meters
             body.setTransform(
-                transform.x / TuningConstants.PPM,
-                transform.y / TuningConstants.PPM,
+                tc.x / TuningConstants.PPM,
+                tc.y / TuningConstants.PPM,
                 body.angle
             )
         }

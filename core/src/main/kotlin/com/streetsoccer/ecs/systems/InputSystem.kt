@@ -11,6 +11,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef
 import com.badlogic.gdx.physics.box2d.CircleShape
 import com.badlogic.gdx.physics.box2d.FixtureDef
 import com.badlogic.gdx.physics.box2d.World
+import com.streetsoccer.ecs.collider
 import com.streetsoccer.ecs.components.ColliderComponent
 import com.streetsoccer.ecs.components.SpinComponent
 import com.streetsoccer.ecs.components.TransformComponent
@@ -268,7 +269,7 @@ class InputSystem(
         val steerDeltas = inputRouter.consumeSteerDeltas()
 
         if (steerDeltas.spinDeltaX != 0f || steerDeltas.spinDeltaY != 0f) {
-            val spinComp = ballEntity.spin
+            val spinComp = ballEntity.spin ?: return
             spinComp.spinX += steerDeltas.spinDeltaX
             spinComp.spinY += steerDeltas.spinDeltaY
         }
@@ -286,9 +287,9 @@ class InputSystem(
         val ballEntity = activeBallEntity ?: return
         val shadowEntity = activeShadowEntity ?: return
 
-        val ballTransform = ballEntity.transform
-        val shadowTransform = shadowEntity.transform
-        val shadowVisual = shadowEntity.visual
+        val ballTransform = ballEntity.transform ?: return
+        val shadowTransform = shadowEntity.transform ?: return
+        val shadowVisual = shadowEntity.visual ?: return
 
         // Shadow position: ball's ground-plane projection
         shadowTransform.x = ballTransform.x
@@ -316,8 +317,7 @@ class InputSystem(
 
         activeBallEntity?.let { ball ->
             // Destroy Box2D body before removing entity
-            val colliderComp = ball.getComponent(ColliderComponent::class.java)
-            colliderComp?.body?.let { body ->
+            ball.collider?.body?.let { body ->
                 world.destroyBody(body)
             }
             engine.removeEntity(ball)

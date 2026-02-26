@@ -6,6 +6,9 @@ import com.badlogic.ashley.core.Family
 import com.streetsoccer.ecs.components.TransformComponent
 import com.streetsoccer.ecs.components.VelocityComponent
 import com.streetsoccer.ecs.components.SpinComponent
+import com.streetsoccer.ecs.transform
+import com.streetsoccer.ecs.velocity
+import com.streetsoccer.ecs.spin
 import com.streetsoccer.physics.TuningConstants
 import kotlin.math.sqrt
 
@@ -23,11 +26,11 @@ class PhysicsSystem : IteratingSystem(
 ) {
 
     override fun processEntity(entity: Entity, deltaTime: Float) {
-        val transform = entity.getComponent(TransformComponent::class.java)
-        val velocity = entity.getComponent(VelocityComponent::class.java)
-        val spin = entity.getComponent(SpinComponent::class.java)
+        val transform = entity.transform ?: return
+        val velocity = entity.velocity ?: return
+        val spin = entity.spin ?: return
 
-        // Gravity 
+        // Gravity
         velocity.vz -= TuningConstants.GRAVITY * deltaTime
 
         // Air Resistance (Drag)
