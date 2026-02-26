@@ -31,7 +31,8 @@ import ktx.ashley.mapperFor
  */
 class CatcherSystem(
     private val gameStateManager: GameStateManager,
-    private val ecsEngine: Engine
+    private val ecsEngine: Engine,
+    private val inputSystem: InputSystem
 ) : EntitySystem() {
 
     companion object {
@@ -96,10 +97,13 @@ class CatcherSystem(
     }
 
     /**
-     * Locate the ball entity in the engine. The ball is identified as the
-     * entity with a [VelocityComponent] (only one ball exists at a time).
+     * Locate the ball entity using the cached reference from InputSystem.
+     * Falls back to linear search if the cached reference is null.
      */
     private fun findBallEntity(): Entity? {
+        inputSystem.getActiveBall()?.let { return it }
+
+        // Fallback: linear search for the entity with a VelocityComponent
         val entities = ecsEngine.entities
         for (i in 0 until entities.size()) {
             val entity = entities[i]

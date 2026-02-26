@@ -12,6 +12,7 @@ import com.badlogic.gdx.physics.box2d.CircleShape
 import com.badlogic.gdx.physics.box2d.FixtureDef
 import com.badlogic.gdx.physics.box2d.World
 import com.streetsoccer.ecs.collider
+import com.streetsoccer.ecs.components.BallShadowComponent
 import com.streetsoccer.ecs.components.ColliderComponent
 import com.streetsoccer.ecs.components.SpinComponent
 import com.streetsoccer.ecs.components.TransformComponent
@@ -253,6 +254,10 @@ class InputSystem(
             tint.set(0f, 0f, 0f, 1f) // Dark shadow tint
         }
         shadowEntity.add(shadowVisual)
+
+        // Tag the shadow entity so RenderSystem can identify it via BallShadowComponent
+        val shadowTag = engine.createComponent(BallShadowComponent::class.java)
+        shadowEntity.add(shadowTag)
 
         engine.addEntity(shadowEntity)
         activeShadowEntity = shadowEntity

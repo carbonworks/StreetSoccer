@@ -31,7 +31,8 @@ class CollisionSystem(
     private val gameStateManager: GameStateManager,
     private val sessionAccumulator: SessionAccumulator,
     private val ecsEngine: Engine,
-    private val audioService: AudioService
+    private val audioService: AudioService,
+    private val inputSystem: InputSystem
 ) : EntitySystem() {
 
     companion object {
@@ -158,6 +159,24 @@ class CollisionSystem(
     }
 
     /**
+     * Locate the ball entity using the cached reference from InputSystem.
+     * Falls back to linear search if the cached reference is null.
+     */
+    private fun findBallEntity(): Entity? {
+        inputSystem.getActiveBall()?.let { return it }
+
+        // Fallback: linear search for the entity with a VelocityComponent
+        val entities = ecsEngine.entities
+        for (i in 0 until entities.size()) {
+            val entity = entities[i]
+            if (velocityCmpMapper.has(entity)) {
+                return entity
+            }
+        }
+        return null
+    }
+
+    /**
      * Play the appropriate impact sound for a target hit based on target type.
      *
      * Maps target type IDs (from `suburban-crossroads.json`) to the sound cues
@@ -178,23 +197,16 @@ class CollisionSystem(
      * If so, treat it as a miss (same as hitting a wall).
      */
     private fun checkOutOfBounds() {
-        // Find the ball entity: the one with a VelocityComponent.
-        val entities = ecsEngine.entities
-        for (i in 0 until entities.size()) {
-            val entity = entities[i]
-            if (velocityCmpMapper.has(entity)) {
-                val transform = transformCmpMapper.get(entity) ?: continue
-                if (transform.x < OOB_MIN_X || transform.x > OOB_MAX_X ||
-                    transform.y < OOB_MIN_Y || transform.y > OOB_MAX_Y
-                ) {
-                    sessionAccumulator.breakStreak()
-                    audioService.playMiss()
-                    gameStateManager.transitionTo(GameState.ImpactMissed)
-                    ecsEngine.removeEntity(entity)
-                }
-                // Only one ball at a time; stop after finding it.
-                return
-            }
+        val entity = findBallEntity() ?: return
+        val transform = transformCmpMapper.get(entity) ?: return
+
+        if (transform.x < OOB_MIN_X || transform.x > OOB_MAX_X ||
+            transform.y < OOB_MIN_Y || transform.y > OOB_MAX_Y
+        ) {
+            sessionAccumulator.breakStreak()
+            audioService.playMiss()
+            gameStateManager.transitionTo(GameState.ImpactMissed)
+            ecsEngine.removeEntity(entity)
         }
     }
 
@@ -205,24 +217,18 @@ class CollisionSystem(
     private fun checkBallStopped() {
         if (gameStateManager.currentState !is GameState.BallInFlight) return
 
-        val entities = ecsEngine.entities
-        for (i in 0 until entities.size()) {
-            val entity = entities[i]
-            if (velocityCmpMapper.has(entity)) {
-                val transform = transformCmpMapper.get(entity) ?: continue
-                val velocity = velocityCmpMapper.get(entity) ?: continue
+        val entity = findBallEntity() ?: return
+        val transform = transformCmpMapper.get(entity) ?: return
+        val velocity = velocityCmpMapper.get(entity) ?: return
 
-                if (transform.height <= STOPPED_HEIGHT_THRESHOLD) {
-                    val speed = kotlin.math.sqrt(
-                        (velocity.vx * velocity.vx + velocity.vy * velocity.vy + velocity.vz * velocity.vz).toDouble()
-                    ).toFloat()
-                    if (speed < STOPPED_SPEED_THRESHOLD) {
-                        sessionAccumulator.breakStreak()
-                        gameStateManager.transitionTo(GameState.ImpactMissed)
-                        ecsEngine.removeEntity(entity)
-                    }
-                }
-                return
+        if (transform.height <= STOPPED_HEIGHT_THRESHOLD) {
+            val speed = kotlin.math.sqrt(
+                (velocity.vx * velocity.vx + velocity.vy * velocity.vy + velocity.vz * velocity.vz).toDouble()
+            ).toFloat()
+            if (speed < STOPPED_SPEED_THRESHOLD) {
+                sessionAccumulator.breakStreak()
+                gameStateManager.transitionTo(GameState.ImpactMissed)
+                ecsEngine.removeEntity(entity)
             }
         }
     }

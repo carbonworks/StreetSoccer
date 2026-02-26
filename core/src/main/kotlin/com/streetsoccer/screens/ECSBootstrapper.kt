@@ -89,15 +89,17 @@ class ECSBootstrapper(
         val engine = Engine()
 
         // --- Create ECS Systems ---
+        // InputSystem must be created first — CollisionSystem and CatcherSystem
+        // use its cached ball reference to avoid per-frame entity searches (#36).
+        val inputSystem = InputSystem(inputRouter, gameStateManager, world, audioService, assets)
         val physicsSystem = PhysicsSystem()
         val collisionSystem = CollisionSystem(
-            contactListener, gameStateManager, sessionAccumulator, engine, audioService
+            contactListener, gameStateManager, sessionAccumulator, engine, audioService, inputSystem
         )
         val renderSystem = RenderSystem(batch)
         val spawnSystem = SpawnSystem(gameStateManager)
-        val inputSystem = InputSystem(inputRouter, gameStateManager, world, audioService, assets)
         val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
-        val catcherSystem = CatcherSystem(gameStateManager, engine)
+        val catcherSystem = CatcherSystem(gameStateManager, engine, inputSystem)
         val trajectorySystem = TrajectorySystem(gameStateManager, inputRouter).apply {
             trajectoryPreviewEnabled = this@ECSBootstrapper.trajectoryPreviewEnabled
         }
