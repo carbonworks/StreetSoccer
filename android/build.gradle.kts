@@ -18,16 +18,32 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
-    
+
     sourceSets.getByName("main") {
         assets.srcDirs("src/main/assets", "../assets")
         jniLibs.srcDirs("libs")
     }
 
+    // ---- Signing config (commented out) ----
+    // Uncomment and fill in your keystore details before building a signed release APK.
+    // Store sensitive values in ~/.gradle/gradle.properties or environment variables
+    // rather than checking them into version control.
+    //
+    // signingConfigs {
+    //     create("release") {
+    //         storeFile = file("path/to/your-release-key.jks")
+    //         storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String? ?: ""
+    //         keyAlias = project.findProperty("RELEASE_KEY_ALIAS") as String? ?: ""
+    //         keyPassword = project.findProperty("RELEASE_KEY_PASSWORD") as String? ?: ""
+    //     }
+    // }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // To use the signing config above, uncomment the following line:
+            // signingConfig = signingConfigs.getByName("release")
         }
     }
 }
@@ -48,6 +64,7 @@ tasks.register<Copy>("copyAndroidNatives") {
     into("src/main/jniLibs/armeabi-v7a")
     include("*.so")
     exclude("META-INF/")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.named("preBuild") {

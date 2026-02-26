@@ -6,7 +6,6 @@ import com.badlogic.ashley.core.EntitySystem
 import com.streetsoccer.ecs.colliderCmpMapper
 import com.streetsoccer.ecs.targetCmpMapper
 import com.streetsoccer.ecs.transformCmpMapper
-import com.streetsoccer.ecs.velocityCmpMapper
 import com.streetsoccer.physics.PhysicsContactListener
 import com.streetsoccer.services.SessionAccumulator
 import com.streetsoccer.state.GameState
@@ -27,7 +26,8 @@ class CollisionSystem(
     private val contactListener: PhysicsContactListener,
     private val gameStateManager: GameStateManager,
     private val sessionAccumulator: SessionAccumulator,
-    private val ecsEngine: Engine
+    private val ecsEngine: Engine,
+    private val inputSystem: InputSystem
 ) : EntitySystem() {
 
     companion object {
@@ -106,10 +106,11 @@ class CollisionSystem(
         val colliderB = colliderCmpMapper.get(entityB)
 
         if ((colliderA != null && !colliderA.isSensor) || (colliderB != null && !colliderB.isSensor)) {
-            // Identify the ball entity (the one with a VelocityComponent).
-            val ballEntity = when {
-                velocityCmpMapper.has(entityA) -> entityA
-                velocityCmpMapper.has(entityB) -> entityB
+            // Identify the ball entity from the cached reference.
+            val activeBall = inputSystem.getActiveBall() ?: return false
+            val ballEntity = when (activeBall) {
+                entityA -> entityA
+                entityB -> entityB
                 else -> return false
             }
 
@@ -127,22 +128,15 @@ class CollisionSystem(
      * If so, treat it as a miss (same as hitting a wall).
      */
     private fun checkOutOfBounds() {
-        // Find the ball entity: the one with a VelocityComponent.
-        val entities = ecsEngine.entities
-        for (i in 0 until entities.size()) {
-            val entity = entities[i]
-            if (velocityCmpMapper.has(entity)) {
-                val transform = transformCmpMapper.get(entity) ?: continue
-                if (transform.x < MIN_X || transform.x > MAX_X ||
-                    transform.y < MIN_Y || transform.y > MAX_Y
-                ) {
-                    sessionAccumulator.breakStreak()
-                    gameStateManager.transitionTo(GameState.ImpactMissed)
-                    ecsEngine.removeEntity(entity)
-                }
-                // Only one ball at a time; stop after finding it.
-                return
-            }
+        val ballEntity = inputSystem.getActiveBall() ?: return
+        val transform = transformCmpMapper.get(ballEntity) ?: return
+
+        if (transform.x < MIN_X || transform.x > MAX_X ||
+            transform.y < MIN_Y || transform.y > MAX_Y
+        ) {
+            sessionAccumulator.breakStreak()
+            gameStateManager.transitionTo(GameState.ImpactMissed)
+            ecsEngine.removeEntity(ballEntity)
         }
     }
 }

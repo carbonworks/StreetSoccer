@@ -59,10 +59,10 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     // --- ECS Systems (held as fields for direct access in the game loop) ---
     private val physicsSystem = PhysicsSystem()
-    private val collisionSystem = CollisionSystem(contactListener, gameStateManager, sessionAccumulator, engine)
+    private val inputSystem = InputSystem(inputRouter, gameStateManager, world)
+    private val collisionSystem = CollisionSystem(contactListener, gameStateManager, sessionAccumulator, engine, inputSystem)
     private val renderSystem = RenderSystem(batch)
     private val spawnSystem = SpawnSystem(gameStateManager)
-    private val inputSystem = InputSystem(inputRouter, gameStateManager, world)
     private val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
 
     override fun show() {
