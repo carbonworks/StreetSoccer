@@ -57,9 +57,6 @@ class InputSystem(
         /** Player origin Y — slightly above bottom edge so ball is visible at launch. */
         private const val PLAYER_ORIGIN_Y = 60f
 
-        /** Horizon Y for depth scaling (from suburban-crossroads.json). */
-        private const val HORIZON_Y = 540f
-
         /** Ball radius in Box2D meters for the dynamic collider. */
         private const val BALL_RADIUS_METERS = 0.15f
 
@@ -297,7 +294,7 @@ class InputSystem(
         shadowTransform.height = 0f
 
         // Shadow scale: same depth formula as ball
-        shadowTransform.screenScale = 0.05f.coerceAtLeast((HORIZON_Y - ballTransform.y) / HORIZON_Y)
+        shadowTransform.screenScale = 0.05f.coerceAtLeast((TuningConstants.HORIZON_Y - ballTransform.y) / TuningConstants.HORIZON_Y)
 
         // Shadow opacity: fades with ball height
         shadowVisual.opacity = MIN_SHADOW_OPACITY.coerceAtLeast(

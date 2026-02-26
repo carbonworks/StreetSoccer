@@ -9,6 +9,7 @@ import com.streetsoccer.ecs.targetCmpMapper
 import com.streetsoccer.ecs.transformCmpMapper
 import com.streetsoccer.ecs.velocityCmpMapper
 import com.streetsoccer.physics.PhysicsContactListener
+import com.streetsoccer.physics.TuningConstants
 import com.streetsoccer.services.AudioService
 import com.streetsoccer.services.SessionAccumulator
 import com.streetsoccer.state.GameState
@@ -34,14 +35,14 @@ class CollisionSystem(
 ) : EntitySystem() {
 
     companion object {
-        // Play-area bounds (game-space pixels). Ball outside these is OOB.
-        private const val MIN_X = -100f
-        private const val MAX_X = 2020f
-        private const val MIN_Y = -100f
-        private const val MAX_Y = 1180f
-
-        // Half the design resolution height, used for depth multiplier.
-        private const val DEPTH_DIVISOR = 540f
+        /** Minimum X boundary (game-space pixels). Ball left of this is out-of-bounds. */
+        private const val OOB_MIN_X = -100f
+        /** Maximum X boundary (game-space pixels). Ball right of this is out-of-bounds. */
+        private const val OOB_MAX_X = 2020f
+        /** Minimum Y boundary (game-space pixels). Ball below this is out-of-bounds. */
+        private const val OOB_MIN_Y = -100f
+        /** Maximum Y boundary (game-space pixels). Ball above this is out-of-bounds. */
+        private const val OOB_MAX_Y = 1180f
 
         // Ball is considered stopped when total speed drops below this (px/s).
         private const val STOPPED_SPEED_THRESHOLD = 15f
@@ -119,7 +120,7 @@ class CollisionSystem(
             val ballTransform = transformCmpMapper.get(ballEntity)
 
             if (target != null && ballTransform != null) {
-                val depthMultiplier = 1.0f + (ballTransform.y / DEPTH_DIVISOR)
+                val depthMultiplier = 1.0f + (ballTransform.y / TuningConstants.HORIZON_Y)
                 val score = (target.basePoints * depthMultiplier).toLong()
 
                 sessionAccumulator.recordHit(target.targetTypeId, score)
@@ -183,8 +184,8 @@ class CollisionSystem(
             val entity = entities[i]
             if (velocityCmpMapper.has(entity)) {
                 val transform = transformCmpMapper.get(entity) ?: continue
-                if (transform.x < MIN_X || transform.x > MAX_X ||
-                    transform.y < MIN_Y || transform.y > MAX_Y
+                if (transform.x < OOB_MIN_X || transform.x > OOB_MAX_X ||
+                    transform.y < OOB_MIN_Y || transform.y > OOB_MAX_Y
                 ) {
                     sessionAccumulator.breakStreak()
                     audioService.playMiss()

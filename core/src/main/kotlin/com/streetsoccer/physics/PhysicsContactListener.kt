@@ -26,7 +26,7 @@ class PhysicsContactListener : ContactListener {
             if (transformA != null && transformB != null) {
                 // If they intersect on Y and Height limits overlap, it's valid
                 val yDiff = Math.abs(transformA.y - transformB.y)
-                if (yDiff < 40f) { // Arbitrary depth collision tolerance
+                if (yDiff < TuningConstants.DEPTH_COLLISION_TOLERANCE) {
                     collisionQueue.add(Pair(entityA, entityB))
                 }
             }

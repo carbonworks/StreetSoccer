@@ -21,4 +21,14 @@ object TuningConstants {
     const val SHADOW_FADE_HEIGHT = 400f // px
     const val BIG_BOMB_COLOR_START_DEPTH = 0.25f
     const val BIG_BOMB_COLOR_MAX_DEPTH = 0.90f
+
+    /** Horizon Y — half the 1080p design resolution height. Used for depth scaling. */
+    const val HORIZON_Y = 540f // px
+
+    /**
+     * Maximum Y-difference (in game-space pixels) between two entities
+     * for a Box2D contact to count as a valid collision.
+     * Filters out contacts between objects at very different depths.
+     */
+    const val DEPTH_COLLISION_TOLERANCE = 40f // px
 }
