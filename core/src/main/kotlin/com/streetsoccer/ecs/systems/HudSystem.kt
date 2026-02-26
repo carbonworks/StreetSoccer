@@ -2,6 +2,7 @@ package com.streetsoccer.ecs.systems
 
 import com.badlogic.ashley.core.EntitySystem
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
@@ -111,8 +112,12 @@ class HudSystem(
     private lateinit var stage: Stage
     private lateinit var viewport: FitViewport
 
-    // --- Procedural textures (created at init, disposed at end) ---
+    // --- Managed resources (created at init, disposed at end) ---
     private val managedTextures = mutableListOf<Texture>()
+    private val managedFonts = mutableListOf<BitmapFont>()
+
+    // --- Shared font for score popups (avoids per-popup allocation) ---
+    private lateinit var popupFont: BitmapFont
 
     // --- HUD actors ---
     private lateinit var scoreLabel: Label
@@ -185,6 +190,11 @@ class HudSystem(
         stage = Stage(viewport)
 
         val font = BitmapFont() // Default LibGDX font; will be replaced with custom arcade font later
+        managedFonts.add(font)
+
+        // Pre-allocate shared font for score popups (reused across all popups)
+        popupFont = BitmapFont()
+        managedFonts.add(popupFont)
 
         // --- Score Label (top-center) ---
         val scoreLabelStyle = Label.LabelStyle(font, Color.WHITE)
@@ -376,7 +386,7 @@ class HudSystem(
         if (!isGameplay) {
             stage.root.isVisible = false
             stage.act(deltaTime)
-            stage.draw()
+            drawStageAndResetBatch()
             return
         }
 
@@ -388,7 +398,7 @@ class HudSystem(
             // Keep existing HUD element visibility based on the pre-pause state
             updateVisibilityForState(prePauseState)
             stage.act(deltaTime)
-            stage.draw()
+            drawStageAndResetBatch()
             return
         }
 
@@ -412,7 +422,23 @@ class HudSystem(
 
         // Tick and draw the stage
         stage.act(deltaTime)
+        drawStageAndResetBatch()
+    }
+
+    /**
+     * Draw the stage and reset the batch state to clean defaults.
+     *
+     * After stage.draw(), the batch color and blend state may be left dirty
+     * (e.g., tinted or non-standard blend mode from scene2d actors). This
+     * resets the batch to white color and standard alpha blending so subsequent
+     * render passes (other ECS systems) start from a known-good state.
+     */
+    private fun drawStageAndResetBatch() {
         stage.draw()
+
+        val batch = stage.batch
+        batch.color = Color.WHITE
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
     }
 
     /**
@@ -675,11 +701,10 @@ class HudSystem(
      * @param isMultiplied True if the hit was at x1.5+ streak (uses larger/gold style)
      */
     fun spawnScorePopup(worldX: Float, worldY: Float, scoreValue: Long, isMultiplied: Boolean = false) {
-        if (!::stage.isInitialized) return
+        if (!::stage.isInitialized || !::popupFont.isInitialized) return
 
-        val font = BitmapFont()
         val color = if (isMultiplied) Color(1f, 0.9f, 0.2f, 1f) else Color.WHITE
-        val style = Label.LabelStyle(font, color)
+        val style = Label.LabelStyle(popupFont, color)
         val popup = Label(scoreValue.toString(), style).apply {
             setFontScale(if (isMultiplied) 2.5f else 2f)
             setAlignment(Align.center)
@@ -871,5 +896,9 @@ class HudSystem(
             texture.dispose()
         }
         managedTextures.clear()
+        for (font in managedFonts) {
+            font.dispose()
+        }
+        managedFonts.clear()
     }
 }

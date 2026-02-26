@@ -1,6 +1,7 @@
 package com.streetsoccer.ui
 
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
@@ -26,6 +27,10 @@ import com.badlogic.gdx.utils.viewport.FitViewport
  * - Buttons are large, bold, arcade-style — wide rounded rectangles with uppercase spaced lettering
  * - Overlay background is rgba(0, 0, 0, 0.7)
  *
+ * All BitmapFont and Texture instances created by this overlay are tracked
+ * in managed lists and disposed when [dispose] is called, preventing memory
+ * leaks across sessions (issue #27).
+ *
  * @param onResume Called when the Resume button is tapped
  * @param onQuit Called when the Quit button is tapped
  */
@@ -47,6 +52,7 @@ class PauseOverlay(
     private val viewport = FitViewport(WORLD_WIDTH, WORLD_HEIGHT)
     val stage = Stage(viewport)
     private val managedTextures = mutableListOf<Texture>()
+    private val managedFonts = mutableListOf<BitmapFont>()
     private var visible = false
 
     init {
@@ -75,8 +81,9 @@ class PauseOverlay(
         }
 
         // Title label: "PAUSED"
-        val font = BitmapFont()
-        val titleStyle = Label.LabelStyle(font, Color.WHITE)
+        val titleFont = BitmapFont()
+        managedFonts.add(titleFont)
+        val titleStyle = Label.LabelStyle(titleFont, Color.WHITE)
         val titleLabel = Label("P A U S E D", titleStyle).apply {
             setFontScale(4f)
             setAlignment(Align.center)
@@ -117,6 +124,7 @@ class PauseOverlay(
         val hoverDrawable = TextureRegionDrawable(TextureRegion(hoverTexture))
 
         val font = BitmapFont()
+        managedFonts.add(font)
         val labelStyle = Label.LabelStyle(font, Color.WHITE)
         val label = Label(text, labelStyle).apply {
             setFontScale(2.5f)
@@ -162,11 +170,20 @@ class PauseOverlay(
     /** Returns true if the overlay is currently visible. */
     fun isVisible(): Boolean = visible
 
-    /** Render the overlay. Call this after drawing the game scene and HUD. */
+    /**
+     * Render the overlay. Call this after drawing the game scene and HUD.
+     * Resets batch state after stage.draw() to prevent dirty color/blend
+     * state from leaking to subsequent renderers (issue #37).
+     */
     fun render(delta: Float) {
         if (!visible) return
         stage.act(delta)
         stage.draw()
+
+        // Reset batch state for subsequent renderers
+        val batch = stage.batch
+        batch.color = Color.WHITE
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
     }
 
     /** Resize the overlay viewport to match the screen dimensions. */
@@ -174,13 +191,17 @@ class PauseOverlay(
         viewport.update(width, height, true)
     }
 
-    /** Dispose of all managed resources. */
+    /** Dispose of all managed resources (fonts, textures, stage). */
     fun dispose() {
         stage.dispose()
         for (texture in managedTextures) {
             texture.dispose()
         }
         managedTextures.clear()
+        for (font in managedFonts) {
+            font.dispose()
+        }
+        managedFonts.clear()
     }
 
     private fun createSolidTexture(width: Int, height: Int, color: Color): Texture {
