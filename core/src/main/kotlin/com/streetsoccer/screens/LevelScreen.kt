@@ -91,13 +91,15 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     }
 
     // --- ECS Systems (held as fields for direct access in the game loop) ---
+    // InputSystem must be initialized first — CollisionSystem and CatcherSystem
+    // use its cached ball reference to avoid per-frame entity searches.
+    private val inputSystem = InputSystem(inputRouter, gameStateManager, world, game.audioService, game.assets)
     private val physicsSystem = PhysicsSystem()
-    private val collisionSystem = CollisionSystem(contactListener, gameStateManager, sessionAccumulator, engine, game.audioService)
+    private val collisionSystem = CollisionSystem(contactListener, gameStateManager, sessionAccumulator, engine, game.audioService, inputSystem)
     private val renderSystem = RenderSystem(batch)
     private val spawnSystem = SpawnSystem(gameStateManager)
-    private val inputSystem = InputSystem(inputRouter, gameStateManager, world, game.audioService, game.assets)
     private val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
-    private val catcherSystem = CatcherSystem(gameStateManager, engine)
+    private val catcherSystem = CatcherSystem(gameStateManager, engine, inputSystem)
     private val trajectorySystem = TrajectorySystem(gameStateManager, inputRouter).apply {
         trajectoryPreviewEnabled = game.saveService.loadSettings().trajectoryPreviewEnabled
     }

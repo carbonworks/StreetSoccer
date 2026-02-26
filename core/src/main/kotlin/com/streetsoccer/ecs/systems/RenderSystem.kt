@@ -25,9 +25,8 @@ import kotlin.math.sqrt
  * This places the ball shadow (renderLayer 1) behind the ball sprite (renderLayer 0)
  * per environment-z-depth-and-collosion.md Section 1 and technical-architecture.md Section 8.
  *
- * Ball shadow rendering: Shadow entities are identified by the BallShadowComponent tag
- * or, as a fallback, by having a null texture region with a black tint (the signature
- * of the shadow entity created by InputSystem). Shadows are drawn using a programmatic
+ * Ball shadow rendering: Shadow entities are identified exclusively by the
+ * BallShadowComponent tag added by InputSystem. Shadows are drawn using a programmatic
  * ellipse texture with opacity computed by InputSystem per physics-and-tuning.md Section 5:
  *   shadowAlpha = max(0.1, 1.0 - ball.height / SHADOW_FADE_HEIGHT)
  */
@@ -56,13 +55,6 @@ class RenderSystem(
 
         /** Height of the programmatic shadow ellipse texture in pixels. */
         private const val SHADOW_TEXTURE_HEIGHT = 32
-
-        /**
-         * Render layer used by InputSystem for the ball shadow.
-         * Used as a fallback heuristic to identify shadow entities when
-         * BallShadowComponent is not present.
-         */
-        private const val SHADOW_RENDER_LAYER = 1
     }
 
     private val ballShadowMapper = mapperFor<BallShadowComponent>()
@@ -122,7 +114,7 @@ class RenderSystem(
         val transform = entity.transform ?: return
 
         // Determine which texture region to use for this entity.
-        val region = visual.region ?: getShadowRegionIfApplicable(entity, visual) ?: return
+        val region = visual.region ?: getShadowRegionIfApplicable(entity) ?: return
 
         batch.color = visual.tint
         batch.color.a = visual.opacity
@@ -142,26 +134,13 @@ class RenderSystem(
     /**
      * If the entity is a ball shadow, return the programmatic shadow region.
      *
-     * Detection uses BallShadowComponent as the primary signal. As a fallback
-     * (until InputSystem adds BallShadowComponent to shadow entities), we
-     * identify shadows by their render-layer heuristic: renderLayer == SHADOW_RENDER_LAYER
-     * combined with a black tint (r < 0.1, g < 0.1, b < 0.1).
+     * Detection uses BallShadowComponent exclusively. InputSystem tags all
+     * shadow entities with this component at creation time.
      */
-    private fun getShadowRegionIfApplicable(entity: Entity, visual: VisualComponent): TextureRegion? {
-        // Primary: tagged with BallShadowComponent
+    private fun getShadowRegionIfApplicable(entity: Entity): TextureRegion? {
         if (ballShadowMapper.has(entity)) {
             return shadowRegion
         }
-
-        // Fallback heuristic: shadow render layer + black tint + no assigned region
-        if (visual.renderLayer == SHADOW_RENDER_LAYER
-            && visual.tint.r < 0.1f
-            && visual.tint.g < 0.1f
-            && visual.tint.b < 0.1f
-        ) {
-            return shadowRegion
-        }
-
         return null
     }
 
