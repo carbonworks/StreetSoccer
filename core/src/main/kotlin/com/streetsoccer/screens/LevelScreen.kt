@@ -68,6 +68,10 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
     override fun show() {
         Gdx.app.log("LevelScreen", "show")
 
+        // Apply slider side setting from persisted user preferences
+        val settings = game.saveService.loadSettings()
+        inputRouter.sliderSide = settings.sliderSide
+
         // Register all ECS systems with the engine
         engine.addSystem(physicsSystem)
         engine.addSystem(collisionSystem)

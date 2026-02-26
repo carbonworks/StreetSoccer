@@ -62,6 +62,6 @@ class PhysicsSystem : IteratingSystem(
         }
 
         // Screen Scale calculation
-        transform.screenScale = 0.05f.coerceAtLeast((540f - transform.y) / 540f)
+        transform.screenScale = 0.05f.coerceAtLeast((TuningConstants.HORIZON_Y - transform.y) / TuningConstants.HORIZON_Y)
     }
 }

@@ -19,6 +19,13 @@ class InputRouter(
     // Zone constant
     private val SLIDER_RAIL_WIDTH = 80f
 
+    /**
+     * Which edge of the screen the angle slider occupies.
+     * Set from [com.streetsoccer.services.SettingsData.sliderSide] ("left" or "right").
+     * Defaults to "left" per the spec.
+     */
+    var sliderSide: String = "left"
+
     // --- Result buffers polled by InputSystem each frame ---
 
     /**
@@ -63,6 +70,18 @@ class InputRouter(
         steerDetector.resetSwipeCounter()
     }
 
+    /**
+     * Check whether a screen X coordinate falls within the slider rail zone.
+     * The zone is on the left edge when [sliderSide] is "left", or the right edge when "right".
+     */
+    private fun isInSliderZone(screenX: Int): Boolean {
+        return if (sliderSide == "right") {
+            screenX >= com.badlogic.gdx.Gdx.graphics.width - SLIDER_RAIL_WIDTH
+        } else {
+            screenX <= SLIDER_RAIL_WIDTH
+        }
+    }
+
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         val state = stateManager.currentState
 
@@ -74,7 +93,7 @@ class InputRouter(
 
         // 2. READY or AIMING -> Slider Rail vs Play Area
         if (state is GameState.Ready || state is GameState.Aiming) {
-            if (screenX <= SLIDER_RAIL_WIDTH) { // Assuming left-aligned slider for now
+            if (isInSliderZone(screenX)) {
                 if (sliderPointerId == -1) {
                     sliderPointerId = pointer
                     angleSliderController.updateValue(screenY.toFloat(), com.badlogic.gdx.Gdx.graphics.height.toFloat())
