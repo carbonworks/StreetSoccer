@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wave-summary.schema.json",
+  "title": "Wave Summary",
+  "description": "Aggregated metrics for all WPs reviewed in a single wave.",
+  "type": "object",
+  "required": ["wave", "date", "agents_active", "wps_reviewed", "total_review_cycles", "verdicts", "first_pass_acceptance_rate", "average_retries", "escalations", "findings", "cost", "latency", "diff_stats", "post_merge_escapes"],
+  "properties": {
+    "wave": { "type": "integer", "minimum": 1 },
+    "date": { "type": "string", "format": "date" },
+    "agents_active": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Agent IDs that were active this wave."
+    },
+    "wps_reviewed": { "type": "integer", "minimum": 0 },
+    "total_review_cycles": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total review cycles across all WPs (includes retries)."
+    },
+    "verdicts": {
+      "type": "object",
+      "properties": {
+        "APPROVE": { "type": "integer", "minimum": 0 },
+        "APPROVE_WITH_ADVISORIES": { "type": "integer", "minimum": 0 },
+        "BLOCK": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["APPROVE", "APPROVE_WITH_ADVISORIES", "BLOCK"],
+      "additionalProperties": false
+    },
+    "first_pass_acceptance_rate": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Fraction of WPs approved on first review cycle."
+    },
+    "average_retries": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Average retry cycles per WP."
+    },
+    "escalations": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of WPs escalated to human after exhausting retries."
+    },
+    "findings": {
+      "type": "object",
+      "required": ["total_raw", "total_deduplicated", "true_positives", "false_positives", "by_severity", "by_agent", "by_category"],
+      "properties": {
+        "total_raw": { "type": "integer", "minimum": 0 },
+        "total_deduplicated": { "type": "integer", "minimum": 0 },
+        "true_positives": { "type": "integer", "minimum": 0 },
+        "false_positives": { "type": "integer", "minimum": 0 },
+        "by_severity": {
+          "type": "object",
+          "properties": {
+            "P0": { "type": "integer", "minimum": 0 },
+            "P1": { "type": "integer", "minimum": 0 },
+            "P2": { "type": "integer", "minimum": 0 },
+            "P3": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["P0", "P1", "P2", "P3"]
+        },
+        "by_agent": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["total", "tp", "fp", "fpr"],
+            "properties": {
+              "total": { "type": "integer", "minimum": 0 },
+              "tp": { "type": "integer", "minimum": 0 },
+              "fp": { "type": "integer", "minimum": 0 },
+              "fpr": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "by_category": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "cost": {
+      "type": "object",
+      "required": ["total_usd", "per_wp_usd"],
+      "properties": {
+        "total_usd": { "type": "number", "minimum": 0 },
+        "per_wp_usd": { "type": "number", "minimum": 0 },
+        "per_defect_caught_usd": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "latency": {
+      "type": "object",
+      "required": ["p50_seconds", "p90_seconds"],
+      "properties": {
+        "p50_seconds": { "type": "number", "minimum": 0 },
+        "p90_seconds": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "diff_stats": {
+      "type": "object",
+      "required": ["total_lines_changed"],
+      "properties": {
+        "total_lines_changed": { "type": "integer", "minimum": 0 },
+        "defect_density": {
+          "type": "number",
+          "minimum": 0,
+          "description": "true_positives / total_lines_changed"
+        }
+      },
+      "additionalProperties": false
+    },
+    "post_merge_escapes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Issues found after merge that a review agent should have caught."
+    },
+    "prompt_adjustments": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Prompt changes made after this wave's audit."
+    },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

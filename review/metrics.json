@@ -1,0 +1,79 @@
+{
+  "project": "street-soccer",
+  "pipeline_version": "1.0",
+  "baseline": {
+    "pre_pipeline_waves": [1, 2, 3, 4, 5, 6, 7],
+    "pre_pipeline_wps": 34,
+    "feature_wps": 20,
+    "rework_wps": 14,
+    "retroactive_defects": {
+      "total": 17,
+      "by_severity": {
+        "P0": 4,
+        "P1": 6,
+        "P2": 3,
+        "P3": 4
+      },
+      "by_category": {
+        "resource-management": 4,
+        "ecs-patterns": 2,
+        "rendering": 3,
+        "constants": 2,
+        "build-config": 1,
+        "hot-path-allocation": 2,
+        "android-lifecycle": 1,
+        "architecture": 1,
+        "cold-path-minor": 1
+      },
+      "items": [
+        {"id": 26, "severity": "P0", "category": "rendering",           "summary": "TrajectorySystem rendering crash — ShapeRenderer inside SpriteBatch block"},
+        {"id": 27, "severity": "P0", "category": "resource-management",  "summary": "Font memory leaks in HudSystem and PauseOverlay"},
+        {"id": 28, "severity": "P0", "category": "ecs-patterns",         "summary": "Null-unsafe component accessors in EntityExtensions"},
+        {"id": 29, "severity": "P0", "category": "rendering",           "summary": "Double physics accumulation — PhysicsSystem internal accumulator"},
+        {"id": 30, "severity": "P1", "category": "ecs-patterns",         "summary": "getComponent() instead of cached mapperFor<>()"},
+        {"id": 31, "severity": "P1", "category": "rendering",           "summary": "Spiral-of-death — no accumulator cap in LevelScreen"},
+        {"id": 32, "severity": "P1", "category": "architecture",         "summary": "LevelScreen god object — 440 lines, mixed concerns"},
+        {"id": 33, "severity": "P1", "category": "constants",            "summary": "Slider side setting not wired into InputRouter"},
+        {"id": 34, "severity": "P1", "category": "constants",            "summary": "Magic numbers scattered across method bodies"},
+        {"id": 35, "severity": "P1", "category": "build-config",         "summary": "ProGuard/R8 not enabled, no signing config"},
+        {"id": 36, "severity": "P2", "category": "hot-path-allocation",  "summary": "Linear ball entity search every frame in CollisionSystem/CatcherSystem"},
+        {"id": 37, "severity": "P2", "category": "rendering",           "summary": "Batch state not reset after Stage.draw()"},
+        {"id": 38, "severity": "P2", "category": "hot-path-allocation",  "summary": "BitmapFont allocated per score popup"},
+        {"id": 39, "severity": "P3", "category": "hot-path-allocation",  "summary": "String template allocations in log calls without guard"},
+        {"id": 40, "severity": "P3", "category": "architecture",         "summary": "Level JSON not integrated — hardcoded entity positions"},
+        {"id": 41, "severity": "P3", "category": "rendering",           "summary": "Fragile shadow heuristic — renderLayer + black tint detection"},
+        {"id": 42, "severity": "P3", "category": "android-lifecycle",    "summary": "AndroidLauncher missing lifecycle overrides"}
+      ]
+    },
+    "defect_escape_rate_per_wp": 0.85,
+    "p0_p1_escape_rate_per_wp": 0.50,
+    "rework_wave_ratio": 0.29,
+    "agents_that_would_have_caught": {
+      "debt-gatekeeper": [26, 27, 28, 29, 30, 34, 37, 38],
+      "architecture-guardian": [30, 32, 40],
+      "performance-sentinel": [36, 38, 39],
+      "merge-analyst": [],
+      "behavior-validator": [33],
+      "spec-auditor": [33, 34, 40]
+    }
+  },
+  "targets": {
+    "false_positive_rate_per_agent": 0.10,
+    "first_pass_acceptance_rate": 0.60,
+    "first_pass_acceptance_rate_stretch": 0.80,
+    "average_retries_per_wp": 1.0,
+    "post_merge_escape_rate_p0_p1": 0.00,
+    "cost_per_wp_usd": 5.00,
+    "cost_per_wp_usd_stretch": 2.00,
+    "review_latency_p90_seconds": 180,
+    "human_escalation_rate": 0.10,
+    "pipeline_snr": 0.90
+  },
+  "kill_switch": {
+    "cost_ceiling_usd": 10.00,
+    "cost_ceiling_consecutive_waves": 2,
+    "escalation_ceiling": 0.30,
+    "escalation_ceiling_consecutive_waves": 2
+  },
+  "waves": []
+}

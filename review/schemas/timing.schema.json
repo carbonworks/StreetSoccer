@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "timing.schema.json",
+  "title": "Review Timing Data",
+  "description": "Latency and cost data for a single review cycle of a work package.",
+  "type": "object",
+  "required": ["wp_id", "wave", "cycle", "timestamps", "token_usage", "diff_stats"],
+  "properties": {
+    "wp_id": {
+      "type": "string",
+      "pattern": "^WP-[0-9]+$"
+    },
+    "wave": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "cycle": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Review cycle number. 1 = first review, 2 = first retry, 3 = second retry."
+    },
+    "timestamps": {
+      "type": "object",
+      "required": ["review_started", "build_gate_completed", "verdict"],
+      "properties": {
+        "review_started": { "type": "string", "format": "date-time" },
+        "build_gate_completed": { "type": "string", "format": "date-time" },
+        "build_gate_result": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "agents_launched": { "type": "string", "format": "date-time" },
+        "agent_completed": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "format": "date-time" },
+          "description": "Completion timestamp per agent name."
+        },
+        "meta_reviewer_completed": { "type": "string", "format": "date-time" },
+        "verdict": { "type": "string", "enum": ["APPROVE", "APPROVE_WITH_ADVISORIES", "BLOCK", "BUILD_FAILED"] }
+      },
+      "additionalProperties": false
+    },
+    "token_usage": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["input", "output", "cost_usd"],
+        "properties": {
+          "input": { "type": "integer", "minimum": 0 },
+          "output": { "type": "integer", "minimum": 0 },
+          "cost_usd": { "type": "number", "minimum": 0 }
+        },
+        "additionalProperties": false
+      },
+      "description": "Token usage per agent name. Keys are agent IDs."
+    },
+    "diff_stats": {
+      "type": "object",
+      "required": ["files_changed", "lines_added", "lines_removed"],
+      "properties": {
+        "files_changed": { "type": "integer", "minimum": 0 },
+        "lines_added": { "type": "integer", "minimum": 0 },
+        "lines_removed": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

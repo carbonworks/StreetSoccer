@@ -253,7 +253,7 @@ Each review agent receives a standardized input package. The orchestrator assemb
 
 ## 8. Prompt Engineering Principles
 
-These principles govern all review agent prompts. See individual prompt files in `.claude/review/prompts/` for implementation.
+These principles govern all review agent prompts. See individual prompt files in `review/prompts/` for implementation.
 
 ### P1: Be Specific, Not General
 
@@ -291,24 +291,81 @@ Review criteria come from version-controlled files (`no-forward-debt.md`, `techn
 
 ## 9. Operational Metrics
 
-Track these per wave to tune the pipeline.
+Track these per wave to tune the pipeline. Cumulative data lives in `review/metrics.json`. The human-readable dashboard is `review/dashboard.md`.
 
-| Metric | Target | What It Tells You |
-|--------|--------|-------------------|
-| False positive rate per agent | < 10% | Prompt is too aggressive |
-| Miss rate (post-merge issues) | 0% for P0/P1 | Pipeline has gaps |
-| Findings per review cycle | 3-8 | Too few = not catching enough; too many = noise |
-| Retry cycles per WP | <= 1 average | Whether coding agents internalize the rules |
-| Review latency (wall clock) | < 3 minutes | Pipeline is blocking flow |
-| Cost per WP reviewed | < $5 | Sustainable cost |
+### Key Metrics
 
-### Post-Wave Audit
+| Metric | Target | Stretch | What It Tells You |
+|--------|--------|---------|-------------------|
+| False positive rate per agent | < 10% | < 5% | Prompt is too aggressive |
+| First-pass acceptance rate | > 60% | > 80% | Coding agents are internalizing rules |
+| Post-merge escape rate (P0/P1) | 0.05/WP | 0.00/WP | Pipeline has gaps |
+| Findings per review cycle | 3-8 | — | Too few = not catching enough; too many = noise |
+| Retry cycles per WP | <= 1.0 avg | <= 0.5 | Whether coding agents learn from feedback |
+| Review latency (p90) | < 3 min | < 2 min | Pipeline is blocking flow |
+| Cost per WP reviewed | < $5 | < $2 | Sustainable cost |
+| Human escalation rate | < 10% | < 5% | Pipeline generating work vs. automating it |
+| Pipeline SNR | > 90% | > 95% | Signal-to-noise ratio (1 - FPR) |
 
-After each wave merges, review:
-1. Were any issues found post-merge that agents should have caught?
-2. Did any agent produce > 10% false positives?
-3. Are prompts still aligned with current spec documents?
-4. Update `review/examples/false-positives.md` with new patterns.
+### Pre-Pipeline Baseline
+
+Established from 34 WPs across 7 waves. See `review/metrics.json` for full data.
+
+| Baseline Metric | Value |
+|----------------|-------|
+| Defect escape rate | 0.85 per WP |
+| P0/P1 escape rate | 0.50 per WP |
+| Rework wave ratio | 29% (2 of 7 waves) |
+
+### Kill Switch
+
+Stop the pipeline if:
+- Cost per WP > $10 for 2 consecutive waves AND no measurable improvement over baseline
+- Human escalation rate > 30% for 2 consecutive waves
+
+### Post-Wave Audit Workflow
+
+After each wave merges (~15 minutes of manual effort):
+
+1. Review meta-reviewer summaries. Tag each finding as TP/FP in `review/results/wave-N/audit.json`
+2. Note any prompt adjustments needed
+3. Update `review/metrics.json` with the wave's data
+4. Update `review/examples/false-positives.md` with new FP patterns
+5. Update `review/dashboard.md` with trend data
+6. Every 3 waves: produce ROI report and agent value assessment
+
+### Alerting Thresholds
+
+| Condition | Trigger | Action |
+|-----------|---------|--------|
+| FPR > 15% for any agent | 2 consecutive waves | Update prompt, add negative examples |
+| FPAR < 40% | 2 consecutive waves | Rules too strict, or coding prompts need review rules embedded |
+| P0/P1 escape post-merge | Any occurrence | Root cause: which agent should have caught it? Update prompt |
+| Agent at 0 findings | 3 consecutive waves | Evaluate retirement (check if category also has 0 escapes) |
+| Avg retries > 1.5 | Any wave | Embed top review rules into coding agent prompts |
+| Cost per WP > $5 | Any single WP | Check diff size; consider splitting WPs or cheaper models |
+
+### Data Storage
+
+```
+review/
+  metrics.json                    # Cumulative tracking across all waves
+  dashboard.md                    # Human-readable health dashboard
+  results/
+    wave-N/
+      WP-NN/
+        cycle-1/
+          build-gate.json         # Build gate output
+          debt-gatekeeper.json    # Agent report (report.schema.json)
+          merge-analyst.json      # Agent report
+          meta-reviewer.json      # Synthesis report
+          meta-reviewer.md        # Human-readable summary
+          timing.json             # Latency and cost data (timing.schema.json)
+        cycle-2/                  # If retry
+          ...
+      wave-summary.json           # Aggregated metrics (wave-summary.schema.json)
+      audit.json                  # Manual TP/FP tagging
+```
 
 ---
 
@@ -342,4 +399,7 @@ These static tools run in the build gate (Phase 1). They handle the mechanical s
 | `work-packages.md` | WP definitions with acceptance criteria for Agent 1 (Behavior Validator) |
 | `CLAUDE.md` | Orchestration instructions for running the pipeline |
 | `review/prompts/*.md` | Individual agent prompt templates |
-| `review/schemas/*.json` | JSON schemas for findings and reports |
+| `review/schemas/*.json` | JSON schemas for findings, reports, timing, and wave summaries |
+| `review/metrics.json` | Cumulative metrics tracking with pre-pipeline baseline |
+| `review/dashboard.md` | Human-readable pipeline health dashboard |
+| `review/examples/false-positives.md` | Known false positive patterns for prompt tuning |
