@@ -639,10 +639,10 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
         font.draw(batch, layout, controlRightEdge - toggleWidth - layout.width - 16f, rowStartY - 10f)
         font.data.setScale(2f)
 
-        // --- Row 2: Slider Side ---
+        // --- Row 2: Slider Hand (handedness) ---
         val row2Y = rowStartY - rowSpacing
         font.color = Color.LIGHT_GRAY
-        layout.setText(font, "Slider Side")
+        layout.setText(font, "Slider Hand")
         font.draw(batch, layout, contentX, row2Y)
 
         // Show which side is selected

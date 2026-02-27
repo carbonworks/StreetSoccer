@@ -28,9 +28,9 @@ import com.streetsoccer.state.GameStateManager
  * HUD elements (per ui-hud-layout.md):
  * - Session score (top-center) with scale pulse on increment
  * - Streak multiplier badge (top-right) with color tiers
- * - Steer budget meter (right edge, 4 segments) visible only during BALL_IN_FLIGHT
+ * - Steer budget meter (opposite edge from slider, 4 segments) visible only during BALL_IN_FLIGHT
  * - Pause icon (top-left) tappable to pause
- * - Angle slider visual (left rail) visible during READY/AIMING
+ * - Angle slider visual (left or right rail per sliderSide) visible during READY/AIMING
  * - Score popups at impact locations, floating upward while fading
  *
  * @see com.streetsoccer.state.GameStateManager
@@ -67,7 +67,7 @@ class HudSystem(
         private const val BOMB_BUTTON_WIDTH = 140f
         private const val BOMB_BUTTON_HEIGHT = 64f
         private const val BOMB_BUTTON_MARGIN_BOTTOM = 120f
-        private const val BOMB_BUTTON_MARGIN_RIGHT = 80f
+        private const val BOMB_BUTTON_MARGIN_SIDE = 80f
 
         // Bomb button colors
         private val BOMB_COLOR_OFF = Color(0.7f, 0.15f, 0.15f, 0.85f)
@@ -135,6 +135,15 @@ class HudSystem(
     // --- Tracking previous values for change detection ---
     private var lastDisplayedScore: Long = -1L
     private var lastDisplayedStreak: Int = -1
+
+    /**
+     * Which edge of the screen the angle slider occupies ("left" or "right").
+     *
+     * Must be set before [addedToEngine] is called, since [createStage]
+     * uses it to position the slider, steer meter, and bomb button.
+     * When "right", the steer meter and bomb button mirror to the left.
+     */
+    var sliderSide: String = "left"
 
     /**
      * Whether bomb mode is currently armed.
@@ -255,7 +264,12 @@ class HudSystem(
         })
         stage.addActor(pauseIcon)
 
-        // --- Angle Slider Visual (left edge) ---
+        // --- Angle Slider Visual (side determined by sliderSide) ---
+        val sliderRailX = if (sliderSide == "right") {
+            WORLD_WIDTH - EDGE_MARGIN - SLIDER_TOUCH_WIDTH + (SLIDER_TOUCH_WIDTH - SLIDER_RAIL_WIDTH) / 2f
+        } else {
+            EDGE_MARGIN + (SLIDER_TOUCH_WIDTH - SLIDER_RAIL_WIDTH) / 2f
+        }
         val sliderRailTexture = createSolidTexture(
             SLIDER_RAIL_WIDTH.toInt(), SLIDER_RAIL_HEIGHT.toInt(),
             Color(1f, 1f, 1f, 0.3f)
@@ -263,7 +277,7 @@ class HudSystem(
         sliderRail = Image(TextureRegionDrawable(TextureRegion(sliderRailTexture))).apply {
             setSize(SLIDER_RAIL_WIDTH, SLIDER_RAIL_HEIGHT)
             setPosition(
-                EDGE_MARGIN + (SLIDER_TOUCH_WIDTH - SLIDER_RAIL_WIDTH) / 2f,
+                sliderRailX,
                 (WORLD_HEIGHT - SLIDER_RAIL_HEIGHT) / 2f
             )
         }
@@ -286,7 +300,12 @@ class HudSystem(
         stage.addActor(sliderThumb)
         stage.addActor(angleLabel)
 
-        // --- Steer Budget Meter (right edge, 4 segments) ---
+        // --- Steer Budget Meter (opposite edge from slider, 4 segments) ---
+        val meterX = if (sliderSide == "right") {
+            EDGE_MARGIN  // Slider on right -> meter on left
+        } else {
+            WORLD_WIDTH - EDGE_MARGIN - STEER_METER_WIDTH  // Slider on left -> meter on right
+        }
         steerMeterSegments = Array(4) { index ->
             val segTexture = createSolidTexture(
                 STEER_METER_WIDTH.toInt(), STEER_METER_SEGMENT_HEIGHT.toInt(),
@@ -297,7 +316,7 @@ class HudSystem(
                 // Segments stack bottom-to-top: segment 1 at bottom, segment 4 at top
                 val meterStartY = (WORLD_HEIGHT - (4 * STEER_METER_SEGMENT_HEIGHT + 3 * STEER_METER_GAP)) / 2f
                 setPosition(
-                    WORLD_WIDTH - EDGE_MARGIN - STEER_METER_WIDTH,
+                    meterX,
                     meterStartY + index * (STEER_METER_SEGMENT_HEIGHT + STEER_METER_GAP)
                 )
                 isVisible = false
@@ -308,7 +327,14 @@ class HudSystem(
             stage.addActor(segment)
         }
 
-        // --- Bomb Mode Button (bottom-right, above launch zone) ---
+        // --- Bomb Mode Button (opposite side from slider, above launch zone) ---
+        // When slider is left, bomb button is bottom-right; when slider is right, bomb button is bottom-left
+        val bombButtonX = if (sliderSide == "right") {
+            BOMB_BUTTON_MARGIN_SIDE  // Left side
+        } else {
+            WORLD_WIDTH - BOMB_BUTTON_MARGIN_SIDE - BOMB_BUTTON_WIDTH  // Right side
+        }
+
         // Border/glow layer (slightly larger, hidden when bomb mode is off)
         val bombBorderTexture = createRoundedRectTexture(
             (BOMB_BUTTON_WIDTH + 8f).toInt(), (BOMB_BUTTON_HEIGHT + 8f).toInt(),
@@ -317,7 +343,7 @@ class HudSystem(
         bombButtonBorder = Image(TextureRegionDrawable(TextureRegion(bombBorderTexture))).apply {
             setSize(BOMB_BUTTON_WIDTH + 8f, BOMB_BUTTON_HEIGHT + 8f)
             setPosition(
-                WORLD_WIDTH - BOMB_BUTTON_MARGIN_RIGHT - BOMB_BUTTON_WIDTH - 4f,
+                bombButtonX - 4f,
                 BOMB_BUTTON_MARGIN_BOTTOM - 4f
             )
             isVisible = false
@@ -332,10 +358,7 @@ class HudSystem(
         )
         bombButton = Image(TextureRegionDrawable(TextureRegion(bombBgTexture))).apply {
             setSize(BOMB_BUTTON_WIDTH, BOMB_BUTTON_HEIGHT)
-            setPosition(
-                WORLD_WIDTH - BOMB_BUTTON_MARGIN_RIGHT - BOMB_BUTTON_WIDTH,
-                BOMB_BUTTON_MARGIN_BOTTOM
-            )
+            setPosition(bombButtonX, BOMB_BUTTON_MARGIN_BOTTOM)
             isVisible = false
             setOrigin(width / 2f, height / 2f)
         }
@@ -356,10 +379,7 @@ class HudSystem(
             setAlignment(Align.center)
         }
         bombButtonLabel.setSize(BOMB_BUTTON_WIDTH, BOMB_BUTTON_HEIGHT)
-        bombButtonLabel.setPosition(
-            WORLD_WIDTH - BOMB_BUTTON_MARGIN_RIGHT - BOMB_BUTTON_WIDTH,
-            BOMB_BUTTON_MARGIN_BOTTOM
-        )
+        bombButtonLabel.setPosition(bombButtonX, BOMB_BUTTON_MARGIN_BOTTOM)
         bombButtonLabel.isVisible = false
         bombButtonLabel.touchable = com.badlogic.gdx.scenes.scene2d.Touchable.disabled // Let clicks pass through to the button
         stage.addActor(bombButtonLabel)
@@ -625,8 +645,14 @@ class HudSystem(
                     sliderValue * (com.streetsoccer.physics.TuningConstants.MAX_ANGLE - com.streetsoccer.physics.TuningConstants.MIN_ANGLE)
             angleLabel.setText("${launchAngle.toInt()}\u00b0")
             angleLabel.pack()
+            // Position label on the inward side of the rail (away from the screen edge)
+            val labelX = if (sliderSide == "right") {
+                railX - angleLabel.width - 8f  // Left of the rail when slider is on right
+            } else {
+                railX + SLIDER_RAIL_WIDTH + 8f  // Right of the rail when slider is on left
+            }
             angleLabel.setPosition(
-                railX + SLIDER_RAIL_WIDTH + 8f,
+                labelX,
                 thumbY + (SLIDER_THUMB_SIZE - angleLabel.height) / 2f
             )
         }
