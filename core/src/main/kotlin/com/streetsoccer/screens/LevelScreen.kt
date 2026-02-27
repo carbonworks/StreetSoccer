@@ -55,14 +55,22 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         inputRouter.sliderSide = settings.sliderSide
         val r = ECSBootstrapper(
             gsm, session, contactListener, world, batch, inputRouter,
-            game.audioService, game.assets, settings.trajectoryPreviewEnabled
+            game.audioService, game.assets, settings.trajectoryPreviewEnabled,
+            settings.debugPanelEnabled
         ).bootstrap(game.levelData, ::handleResume, ::handleQuit, pauseListener, backHandler)
         result = r
         catcherTexture = r.catcherTexture
+        // Wire debug button to toggle debug panel overlay visibility
+        r.hudSystem.onDebugButtonTapped = {
+            val overlay = r.debugPanelOverlay
+            if (overlay != null) {
+                if (overlay.isVisible()) overlay.hide() else overlay.show()
+            }
+        }
         gameLoop = GameLoop(
             r.engine, world, batch, viewport, bgRenderer, gsm, inputRouter,
             r.physicsSystem, r.collisionSystem, r.hudSystem, r.inputSystem,
-            r.trajectorySystem, r.pauseOverlay
+            r.trajectorySystem, r.pauseOverlay, r.debugPanelOverlay
         )
         Gdx.input.inputProcessor = r.inputMultiplexer
         gsm.transitionTo(GameState.Ready)
@@ -74,6 +82,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
         viewport.update(width, height, true)
         result?.hudSystem?.resize(width, height)
         result?.pauseOverlay?.resize(width, height)
+        result?.debugPanelOverlay?.resize(width, height)
     }
 
     override fun hide() {
@@ -86,7 +95,7 @@ class LevelScreen(private val game: GameBootstrapper) : KtxScreen {
 
     override fun dispose() {
         bgRenderer.dispose()
-        result?.run { renderSystem.dispose(); hudSystem.dispose(); trajectorySystem.dispose(); pauseOverlay.dispose() }
+        result?.run { renderSystem.dispose(); hudSystem.dispose(); trajectorySystem.dispose(); pauseOverlay.dispose(); debugPanelOverlay?.dispose() }
         catcherTexture?.dispose()
         batch.dispose()
         world.dispose()

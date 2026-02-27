@@ -68,7 +68,7 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
 
     // Overlay panel dimensions — settings panel is taller to hold all controls
     private val panelWidth = 660f
-    private val settingsPanelHeight = 620f
+    private val settingsPanelHeight = 730f
     private val statsPanelHeight = 700f
 
     // --- Settings overlay state ---
@@ -78,6 +78,7 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
     // Toggle hit areas (set during draw, used during touch)
     private val trajectoryToggleBounds = Rectangle()
     private val sliderSideToggleBounds = Rectangle()
+    private val debugPanelToggleBounds = Rectangle()
 
     // Volume slider track areas
     private val musicSliderBounds = Rectangle()
@@ -192,6 +193,15 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
         if (sliderSideToggleBounds.contains(wx, wy)) {
             val newSide = if (currentSettings.sliderSide == "left") "right" else "left"
             currentSettings = currentSettings.copy(sliderSide = newSide)
+            saveSettings()
+            return true
+        }
+
+        // Debug panel toggle
+        if (debugPanelToggleBounds.contains(wx, wy)) {
+            currentSettings = currentSettings.copy(
+                debugPanelEnabled = !currentSettings.debugPanelEnabled
+            )
             saveSettings()
             return true
         }
@@ -515,6 +525,13 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
         val slider2Y = row4Y - sliderHeight / 2f - 10f
         sfxSliderBounds.set(sliderX, slider2Y - 20f, sliderWidth, sliderHeight + 40f)
         drawSliderTrack(sliderX, slider2Y, sliderWidth, sliderHeight, currentSettings.sfxVolume)
+
+        // --- Row 5: Debug Panel toggle ---
+        val row5Y = rowStartY - rowSpacing * 4
+        val toggle3X = controlRightEdge - toggleWidth
+        val toggle3Y = row5Y - toggleHeight / 2f - 10f
+        debugPanelToggleBounds.set(toggle3X, toggle3Y, toggleWidth, toggleHeight)
+        drawToggleSwitch(toggle3X, toggle3Y, toggleWidth, toggleHeight, currentSettings.debugPanelEnabled)
     }
 
     /** Draw a toggle switch at the given position. */
@@ -680,6 +697,20 @@ class AttractScreen(private val game: GameBootstrapper) : KtxScreen {
         font.data.setScale(1.5f)
         layout.setText(font, "$sfxPct%")
         font.draw(batch, layout, contentX, row4Y - 35f)
+        font.data.setScale(2f)
+
+        // --- Row 5: Debug Panel ---
+        val row5Y = rowStartY - rowSpacing * 4
+        font.color = Color.LIGHT_GRAY
+        layout.setText(font, "Debug Panel")
+        font.draw(batch, layout, contentX, row5Y)
+
+        // Status text next to toggle
+        val statusText3 = if (currentSettings.debugPanelEnabled) "ON" else "OFF"
+        font.color = if (currentSettings.debugPanelEnabled) accentGreen else Color.LIGHT_GRAY
+        font.data.setScale(1.5f)
+        layout.setText(font, statusText3)
+        font.draw(batch, layout, controlRightEdge - toggleWidth - layout.width - 16f, row5Y - 10f)
         font.data.setScale(2f)
 
         // Reset font

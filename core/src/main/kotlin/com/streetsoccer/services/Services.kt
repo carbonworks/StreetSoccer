@@ -62,7 +62,8 @@ data class SettingsData(
     val trajectoryPreviewEnabled: Boolean = false,
     val sliderSide: String = "left",
     val masterVolume: Float = 1.0f,
-    val sfxVolume: Float = 1.0f
+    val sfxVolume: Float = 1.0f,
+    val debugPanelEnabled: Boolean = false
 ) {
     companion object {
         const val CURRENT_SETTINGS_VERSION = 1

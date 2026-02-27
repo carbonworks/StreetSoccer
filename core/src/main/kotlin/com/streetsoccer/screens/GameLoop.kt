@@ -21,6 +21,7 @@ import com.streetsoccer.physics.TuningConstants
 import com.streetsoccer.rendering.BackgroundRenderer
 import com.streetsoccer.state.GameState
 import com.streetsoccer.state.GameStateManager
+import com.streetsoccer.ui.DebugPanelOverlay
 import com.streetsoccer.ui.PauseOverlay
 
 /**
@@ -52,7 +53,8 @@ class GameLoop(
     private val hudSystem: HudSystem,
     private val inputSystem: InputSystem,
     private val trajectorySystem: TrajectorySystem,
-    private val pauseOverlay: PauseOverlay
+    private val pauseOverlay: PauseOverlay,
+    private val debugPanelOverlay: DebugPanelOverlay?
 ) {
 
     /** Fixed-timestep accumulator for physics + Box2D stepping. */
@@ -139,6 +141,9 @@ class GameLoop(
 
         // 8. Render pause overlay on top of everything (if visible)
         pauseOverlay.render(delta)
+
+        // 9. Render debug panel overlay on top of pause overlay (if visible)
+        debugPanelOverlay?.render(delta)
     }
 
     /**

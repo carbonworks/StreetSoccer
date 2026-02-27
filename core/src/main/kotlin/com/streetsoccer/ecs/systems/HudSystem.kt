@@ -38,7 +38,8 @@ import com.streetsoccer.state.GameStateManager
  */
 class HudSystem(
     private val gameStateManager: GameStateManager,
-    private val sessionAccumulator: SessionAccumulator
+    private val sessionAccumulator: SessionAccumulator,
+    private val debugPanelEnabled: Boolean = false
 ) : EntitySystem(), GameStateListener {
 
     companion object {
@@ -78,6 +79,10 @@ class HudSystem(
         private const val BOMB_PULSE_MIN_SCALE = 1.0f
         private const val BOMB_PULSE_MAX_SCALE = 1.08f
         private const val BOMB_PULSE_PERIOD = 0.6f
+
+        // Debug button size — same as pause icon, offset to the right
+        private const val DEBUG_ICON_SIZE = 64f
+        private const val DEBUG_ICON_OFFSET_FROM_PAUSE = 80f
 
         // Score popup animation (from ui-hud-layout.md Section 6)
         private const val POPUP_FLOAT_DISTANCE = 80f
@@ -131,6 +136,15 @@ class HudSystem(
     private lateinit var bombButton: Image
     private lateinit var bombButtonBorder: Image
     private lateinit var bombButtonLabel: Label
+
+    // --- Debug button ---
+    private var debugIcon: Image? = null
+
+    /**
+     * Callback invoked when the debug button is tapped.
+     * LevelScreen sets this to show/hide the [com.streetsoccer.ui.DebugPanelOverlay].
+     */
+    var onDebugButtonTapped: (() -> Unit)? = null
 
     // --- Tracking previous values for change detection ---
     private var lastDisplayedScore: Long = -1L
@@ -254,6 +268,31 @@ class HudSystem(
             }
         })
         stage.addActor(pauseIcon)
+
+        // --- Debug Button (top-left, offset from pause icon) ---
+        if (debugPanelEnabled) {
+            val debugTexture = createDebugIconTexture(64, 64)
+            debugIcon = Image(TextureRegionDrawable(TextureRegion(debugTexture))).apply {
+                setSize(DEBUG_ICON_SIZE, DEBUG_ICON_SIZE)
+                setPosition(
+                    EDGE_MARGIN + PAUSE_ICON_SIZE + DEBUG_ICON_OFFSET_FROM_PAUSE,
+                    WORLD_HEIGHT - EDGE_MARGIN - DEBUG_ICON_SIZE
+                )
+                color.a = 0.6f
+            }
+            debugIcon!!.addListener(object : InputListener() {
+                override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
+                    debugIcon!!.color.a = 1.0f
+                    onDebugButtonTapped?.invoke()
+                    return true
+                }
+
+                override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
+                    debugIcon!!.color.a = 0.6f
+                }
+            })
+            stage.addActor(debugIcon)
+        }
 
         // --- Angle Slider Visual (left edge) ---
         val sliderRailTexture = createSolidTexture(
@@ -852,6 +891,47 @@ class HudSystem(
         pixmap.drawPixel(width - 1, height - 1)
         pixmap.drawPixel(width - 2, height - 1)
         pixmap.drawPixel(width - 1, height - 2)
+
+        val texture = Texture(pixmap)
+        pixmap.dispose()
+        managedTextures.add(texture)
+        return texture
+    }
+
+    /**
+     * Create a wrench/gear debug icon texture.
+     * Simple procedural icon: a circle with an inner ring, suggesting a gear.
+     */
+    private fun createDebugIconTexture(width: Int, height: Int): Texture {
+        val pixmap = Pixmap(width, height, Pixmap.Format.RGBA8888)
+        pixmap.setColor(Color(0f, 0f, 0f, 0f))
+        pixmap.fill()
+
+        val cx = width / 2
+        val cy = height / 2
+        val outerRadius = (width * 0.4f).toInt()
+        val innerRadius = (width * 0.2f).toInt()
+
+        // Outer circle (gear body)
+        pixmap.setColor(Color(0.8f, 0.6f, 0.2f, 1f))
+        pixmap.fillCircle(cx, cy, outerRadius)
+
+        // Inner circle (hollow center)
+        pixmap.setColor(Color(0f, 0f, 0f, 0f))
+        pixmap.fillCircle(cx, cy, innerRadius)
+
+        // Four teeth (rectangles extending from gear body)
+        val toothLength = (width * 0.15f).toInt()
+        val toothWidth = (width * 0.15f).toInt()
+        pixmap.setColor(Color(0.8f, 0.6f, 0.2f, 1f))
+        // Top tooth
+        pixmap.fillRectangle(cx - toothWidth / 2, cy - outerRadius - toothLength, toothWidth, toothLength)
+        // Bottom tooth
+        pixmap.fillRectangle(cx - toothWidth / 2, cy + outerRadius, toothWidth, toothLength)
+        // Left tooth
+        pixmap.fillRectangle(cx - outerRadius - toothLength, cy - toothWidth / 2, toothLength, toothWidth)
+        // Right tooth
+        pixmap.fillRectangle(cx + outerRadius, cy - toothWidth / 2, toothLength, toothWidth)
 
         val texture = Texture(pixmap)
         pixmap.dispose()
