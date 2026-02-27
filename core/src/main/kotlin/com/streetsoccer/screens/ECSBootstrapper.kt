@@ -98,7 +98,9 @@ class ECSBootstrapper(
         )
         val renderSystem = RenderSystem(batch)
         val spawnSystem = SpawnSystem(gameStateManager)
-        val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
+        val hudSystem = HudSystem(gameStateManager, sessionAccumulator).apply {
+            sliderSide = inputRouter.sliderSide
+        }
         val catcherSystem = CatcherSystem(gameStateManager, engine, inputSystem)
         val trajectorySystem = TrajectorySystem(gameStateManager, inputRouter).apply {
             trajectoryPreviewEnabled = this@ECSBootstrapper.trajectoryPreviewEnabled
