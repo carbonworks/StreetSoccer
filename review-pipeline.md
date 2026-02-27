@@ -64,11 +64,13 @@ After all agents complete, the meta-reviewer:
 
 ### Phased Rollout
 
-| Phase | Agents | When to Deploy |
-|-------|--------|----------------|
-| **A (immediate)** | Debt Gatekeeper + Merge Analyst + Build Gate | Next wave |
-| **B (after 2-3 waves)** | + Architecture Guardian + Performance Sentinel | After Phase A prompts are tuned |
-| **C (after Phase B stabilizes)** | + Behavior Validator + Spec Auditor | After false positive rates stabilized |
+| Phase | Agents | Status |
+|-------|--------|--------|
+| **A** | Debt Gatekeeper + Merge Analyst + Build Gate | Prompts ready |
+| **B** | + Architecture Guardian + Performance Sentinel | Prompts ready — deploy after Phase A is tuned |
+| **C** | + Behavior Validator + Spec Auditor | Prompts ready — deploy after Phase B stabilizes |
+
+All 6 agent prompt templates are complete in `review/prompts/`. Phased deployment controls which agents are launched — not which prompts exist.
 
 ### Agent Summary
 

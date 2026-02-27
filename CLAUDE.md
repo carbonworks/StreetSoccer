@@ -150,12 +150,14 @@ Every WP branch goes through a multi-agent review pipeline before merging. The p
 
 | Agent | ID | Mandate | Phase |
 |-------|----|---------|-------|
-| Debt Gatekeeper | DG | Enforce `no-forward-debt.md` WP Completion Checklist | A (active) |
-| Merge Analyst | MA | Predict merge conflicts, cross-file consistency | A (active) |
-| Architecture Guardian | AG | Enforce `technical-architecture.md` patterns | B (planned) |
-| Performance Sentinel | PS | Hot-path allocations, GC pressure, game-dev perf | B (planned) |
-| Behavior Validator | BV | Verify acceptance criteria, generate unit tests | C (planned) |
-| Spec Auditor | SA | Code-spec alignment, edit hierarchy compliance | C (planned) |
+| Debt Gatekeeper | DG | Enforce `no-forward-debt.md` WP Completion Checklist | A (deploy first) |
+| Merge Analyst | MA | Predict merge conflicts, cross-file consistency | A (deploy first) |
+| Architecture Guardian | AG | Enforce `technical-architecture.md` patterns | B (after A is tuned) |
+| Performance Sentinel | PS | Hot-path allocations, GC pressure, game-dev perf | B (after A is tuned) |
+| Behavior Validator | BV | Verify acceptance criteria, generate unit tests | C (after B stabilizes) |
+| Spec Auditor | SA | Code-spec alignment, edit hierarchy compliance | C (after B stabilizes) |
+
+All 6 prompt templates are complete in `review/prompts/`. Phase controls which agents are launched per review.
 
 Prompt templates live in `review/prompts/`. JSON schemas in `review/schemas/`.
 
