@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "report.schema.json",
+  "title": "Review Report",
+  "description": "Complete review report from a single review agent or the meta-reviewer synthesis.",
+  "type": "object",
+  "required": ["agent", "wp_id", "branch", "commit_sha", "timestamp", "verdict", "findings", "summary"],
+  "properties": {
+    "agent": {
+      "type": "string",
+      "description": "The agent that produced this report (or 'meta-reviewer' for the synthesis report)."
+    },
+    "wp_id": {
+      "type": "string",
+      "pattern": "^WP-[0-9]+$",
+      "description": "The work package being reviewed."
+    },
+    "branch": {
+      "type": "string",
+      "description": "The git branch under review."
+    },
+    "commit_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$",
+      "description": "The commit SHA being reviewed."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the review completed."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["APPROVE", "APPROVE_WITH_ADVISORIES", "BLOCK"],
+      "description": "The gate decision. APPROVE: no findings >= P2. APPROVE_WITH_ADVISORIES: P2 findings present but no P0/P1. BLOCK: P0 or P1 findings present."
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "finding.schema.json" },
+      "description": "All findings from this review, sorted by severity (P0 first)."
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total_findings", "by_severity", "blocking_count", "files_reviewed", "checklist_coverage"],
+      "properties": {
+        "total_findings": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of findings."
+        },
+        "by_severity": {
+          "type": "object",
+          "properties": {
+            "P0": { "type": "integer", "minimum": 0 },
+            "P1": { "type": "integer", "minimum": 0 },
+            "P2": { "type": "integer", "minimum": 0 },
+            "P3": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["P0", "P1", "P2", "P3"],
+          "description": "Finding count by severity."
+        },
+        "blocking_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of findings that block the merge."
+        },
+        "files_reviewed": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of files that were reviewed."
+        },
+        "checklist_coverage": {
+          "type": "string",
+          "description": "For agents with a defined checklist (e.g., Debt Gatekeeper): fraction of items evaluated (e.g., '23/23'). For other agents: 'N/A'."
+        }
+      },
+      "additionalProperties": false
+    },
+    "meta": {
+      "type": "object",
+      "description": "Meta-reviewer-only fields. Present only in synthesis reports.",
+      "properties": {
+        "agent_reports_received": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of agent names whose reports were synthesized."
+        },
+        "duplicates_removed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of duplicate findings removed during synthesis."
+        },
+        "conflicts_resolved": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of inter-agent conflicts resolved."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

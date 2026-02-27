@@ -28,6 +28,7 @@ Street Soccer is a **2.5D arcade game** for Android (LibGDX + Kotlin). The playe
 | `initial-plan-rough-draft.md` | Early brainstorm about AI workflow (historical) | Historical |
 | `antigravity-handoff-prompt.md` | Implementation handoff prompt for first Antigravity coding session — architecture context and build order | Reference |
 | `work-packages.md` | Parallel work packages for agent-based development: WP-0 through WP-9 with file ownership, dependencies, and acceptance criteria | Task definitions |
+| `review-pipeline.md` | Multi-agent review pipeline: 6-agent roster, gate mechanics, feedback loops, phased rollout | Quality infrastructure |
 | `background.jpg` | Level background image — flat-style suburban intersection illustration | Art asset |
 
 ## Key Design Decisions Already Made
@@ -133,3 +134,86 @@ Conflicts are most likely in files listed under "Touches" for multiple packages 
 ### Running Agents Concurrently
 
 Launch all independent packages in a single message with multiple Task tool calls. For example, Wave 1 (WP-0, WP-6, WP-7, WP-8) can all run simultaneously since they have no dependencies on each other.
+
+## Review Pipeline
+
+Every WP branch goes through a multi-agent review pipeline before merging. The pipeline catches quality issues that coding agents miss. For the full spec, see `review-pipeline.md`.
+
+### Pipeline Phases
+
+1. **Build Gate** — `./gradlew build` + static checks. If this fails, stop. No LLM agents run.
+2. **Parallel Review** — Specialized agents each validate one concern (see Agent Roster below).
+3. **Meta-Reviewer** — Deduplicates findings, resolves conflicts, makes the gate decision.
+4. **Feedback Loop** — BLOCK → findings go back to coding agent (max 2 retries). APPROVE → merge.
+
+### Agent Roster
+
+| Agent | ID | Mandate | Phase |
+|-------|----|---------|-------|
+| Debt Gatekeeper | DG | Enforce `no-forward-debt.md` WP Completion Checklist | A (active) |
+| Merge Analyst | MA | Predict merge conflicts, cross-file consistency | A (active) |
+| Architecture Guardian | AG | Enforce `technical-architecture.md` patterns | B (planned) |
+| Performance Sentinel | PS | Hot-path allocations, GC pressure, game-dev perf | B (planned) |
+| Behavior Validator | BV | Verify acceptance criteria, generate unit tests | C (planned) |
+| Spec Auditor | SA | Code-spec alignment, edit hierarchy compliance | C (planned) |
+
+Prompt templates live in `review/prompts/`. JSON schemas in `review/schemas/`.
+
+### How to Run the Review Pipeline
+
+When a coding agent completes a WP and commits on its worktree branch:
+
+1. **Run the build gate** on the worktree branch:
+   ```
+   git -C {worktree_path} diff --name-only main...HEAD
+   ./gradlew -p {worktree_path} build
+   ```
+   If the build fails, return the error to the coding agent for fixing. Do not proceed.
+
+2. **Assemble common inputs** for review agents:
+   - `DIFF`: `git -C {worktree_path} diff main...HEAD`
+   - `CHANGED_FILES`: `git -C {worktree_path} diff --name-only main...HEAD`
+   - `FILE_CONTENTS`: Read the full content of each changed file from the worktree
+   - `WP_DEFINITION`: Extract from `work-packages.md`
+
+3. **Launch Phase A review agents in parallel** as Tasks:
+   - Read the prompt template from `review/prompts/{agent}.md`
+   - Replace template variables (`{DIFF}`, `{FILE_CONTENTS}`, `{WP_DEFINITION}`, etc.)
+   - Launch each as a Task with `subagent_type: "general-purpose"`
+   - For the Debt Gatekeeper: also provide `TuningConstants.kt` content and build output
+   - For the Merge Analyst: also provide main-branch versions of "Touches" files and concurrent WP status
+
+4. **Collect agent reports** — each agent produces a JSON report per `report.schema.json`.
+
+5. **Launch meta-reviewer** — pass all agent reports as input. It deduplicates, resolves conflicts, and returns a unified report with the gate decision.
+
+6. **Act on the verdict:**
+   - **APPROVE**: Branch is clear to merge to main.
+   - **APPROVE_WITH_ADVISORIES**: Merge is allowed. P2 findings become backlog items.
+   - **BLOCK**: Send the blocking findings (P0/P1) back to the coding agent. The coding agent fixes and re-commits. Re-run the pipeline. Max 2 retry cycles, then escalate to human.
+
+### Review Agent Prompt Template
+
+When launching a review agent for a WP, read the prompt from `review/prompts/{agent-name}.md` and substitute these variables:
+
+| Variable | Source |
+|----------|--------|
+| `{WP_DEFINITION}` | Full WP scope + acceptance criteria from `work-packages.md` |
+| `{DIFF}` | `git diff main...HEAD` on the worktree branch |
+| `{FILE_CONTENTS}` | Full content of each changed file |
+| `{CHANGED_FILES}` | List of changed file paths |
+| `{TUNING_CONSTANTS}` | Content of `TuningConstants.kt` (Debt Gatekeeper only) |
+| `{BUILD_OUTPUT}` | Output of `./gradlew build` (Debt Gatekeeper only) |
+| `{MAIN_BRANCH_TOUCHED_FILES}` | Main branch versions of "Touches" files (Merge Analyst only) |
+| `{WP_BRANCH_TOUCHED_FILES}` | WP branch versions of "Touches" files (Merge Analyst only) |
+| `{CONCURRENT_WPS}` | Status of other in-progress WPs (Merge Analyst only) |
+| `{AGENT_REPORTS_JSON}` | All agent report JSONs (Meta-Reviewer only) |
+
+### Gate Severity Rules
+
+| Severity | Gate Action |
+|----------|-------------|
+| P0 | Hard block — crash, data loss, blocks other WPs |
+| P1 | Hard block — incorrect player-visible behavior |
+| P2 | Advisory — merge allowed, tracked as backlog item |
+| P3 | Note — merge allowed, for awareness only |

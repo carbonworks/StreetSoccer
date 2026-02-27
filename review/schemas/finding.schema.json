@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finding.schema.json",
+  "title": "Review Finding",
+  "description": "A single finding from a review agent in the Street Soccer review pipeline.",
+  "type": "object",
+  "required": ["agent", "finding_id", "severity", "category", "file", "description", "evidence", "blocks_merge"],
+  "properties": {
+    "agent": {
+      "type": "string",
+      "enum": [
+        "debt-gatekeeper",
+        "merge-analyst",
+        "architecture-guardian",
+        "performance-sentinel",
+        "behavior-validator",
+        "spec-auditor"
+      ],
+      "description": "The review agent that produced this finding."
+    },
+    "finding_id": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}-[0-9]{3}$",
+      "description": "Unique finding ID within this review. Format: agent prefix + 3-digit number (e.g., DG-001, MA-001)."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["P0", "P1", "P2", "P3"],
+      "description": "Severity level. P0: crash/data-loss/blocks-other-WPs. P1: incorrect player-visible behavior. P2: performance/code-smell/minor-UX. P3: polish/documentation/style."
+    },
+    "category": {
+      "type": "string",
+      "description": "The concern category (e.g., resource-management, ecs-patterns, rendering, constants, merge-conflict, spec-divergence)."
+    },
+    "file": {
+      "type": "string",
+      "description": "Relative path to the file containing the issue."
+    },
+    "line_range": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "minItems": 1,
+      "maxItems": 2,
+      "description": "Line number or [start, end] range in the file. Single-element array for a single line."
+    },
+    "rule": {
+      "type": "string",
+      "description": "The specific rule or checklist item being evaluated. Must be a direct quote or precise reference from the governing document."
+    },
+    "description": {
+      "type": "string",
+      "description": "What the issue is. Concise, factual, actionable."
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Quoted code snippet from the diff or file that triggered this finding. If you cannot quote the code, do not report the finding."
+    },
+    "suggested_fix": {
+      "type": "string",
+      "description": "How to resolve the issue. Optional but recommended."
+    },
+    "blocks_merge": {
+      "type": "boolean",
+      "description": "Whether this finding should block the merge. P0 and P1 always block. P2 and P3 never block."
+    }
+  },
+  "additionalProperties": false
+}

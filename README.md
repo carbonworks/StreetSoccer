@@ -73,6 +73,10 @@ StreetSoccer/
   android/                       # Android launcher, manifest, lifecycle
   desktop/                       # Desktop launcher for development
   assets/                        # SVGs, sounds, level JSON, background images
+  review/                        # Review pipeline infrastructure
+    prompts/                     # Agent prompt templates (debt-gatekeeper, merge-analyst, etc.)
+    schemas/                     # JSON schemas for findings and reports
+    examples/                    # False positive catalog for prompt tuning
 ```
 
 ## Building & Running
@@ -140,6 +144,7 @@ ProGuard/R8 minification is enabled for release builds.
 | `testing-performance-plan.md` | Target devices, performance budgets, testing strategy, profiling scenarios |
 | `accessibility-localization.md` | Colorblind considerations, touch target sizing, font scaling, text localization approach |
 | `work-packages.md` | Parallel work packages for agent-based development with file ownership and dependencies |
+| `review-pipeline.md` | Multi-agent review pipeline -- 6 specialized review agents, gate mechanics, phased rollout |
 | `backlog.md` | Outstanding and completed work items |
 
 ### Level Data
