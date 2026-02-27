@@ -6,20 +6,20 @@ Items are ordered by priority (top = do first). Tags indicate category. Wave ass
 
 | #  | Item | Tag | Wave |
 |----|------|-----|------|
-| 25 | Physics debug panel | dev-tool | Unassigned |
-| 10 | Big Bomb meteor feedback | feature | Wave 5+ |
-| 13 | Cosmetic & unlock system | feature | Wave 5+ |
-| 14 | Audio Spec | doc | Wave 5+ |
-| 15 | Asset Registry (doc + placeholders) | doc | Wave 5+ |
-| 16 | Cosmetic & Unlock System Spec | doc | Wave 5+ |
-| 17 | Seasonal Variant Templates | doc | Wave 5+ |
-| 18 | Big Bomb Meteor Sprite Set | beta | Wave 5+ |
-| 19 | Handedness Configuration | beta | Wave 5+ |
-| 20 | Testing & Performance Plan | doc | Wave 5+ |
-| 21 | Tips System Spec | doc | Wave 5+ |
-| 22 | Trajectory Preview Spec | doc | Wave 5+ |
-| 23 | Accessibility & Localization | doc | Wave 5+ |
-| 24 | Update README.md | doc | Wave 5+ |
+| 25 | Physics debug panel | dev-tool | → WP-30 (Wave 7) |
+| 10 | Big Bomb meteor feedback | feature | → WP-32 (Wave 7) |
+| 13 | Cosmetic & unlock system | feature | Unassigned |
+| 14 | Audio Spec | doc | → WP-33 (Wave 7) |
+| 15 | Asset Registry (doc + placeholders) | doc | → WP-33 (Wave 7) |
+| 16 | Cosmetic & Unlock System Spec | doc | → WP-33 (Wave 7) |
+| 17 | Seasonal Variant Templates | doc | → WP-33 (Wave 7) |
+| 18 | Big Bomb Meteor Sprite Set | beta | → WP-32 (Wave 7) |
+| 19 | Handedness Configuration | beta | → WP-31 (Wave 7) |
+| 20 | Testing & Performance Plan | doc | → WP-34 (Wave 7) |
+| 21 | Tips System Spec | doc | → WP-34 (Wave 7) |
+| 22 | Trajectory Preview Spec | doc | → WP-34 (Wave 7) |
+| 23 | Accessibility & Localization | doc | → WP-34 (Wave 7) |
+| 24 | Update README.md | doc | → WP-34 (Wave 7) |
 
 ## Item Details
 

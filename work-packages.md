@@ -427,6 +427,131 @@ Final debt clearance wave. All remaining P2/P3 items plus the LevelScreen decomp
 
 ---
 
+## Wave 7 — Features + Docs
+
+Physics debug panel, handedness mirroring, Big Bomb visual feedback, and full documentation pass.
+
+### WP-30: Physics Debug Panel
+
+**Status:** ready
+**Backlog item:** #25 (physics debug panel)
+**Owns:** new `core/.../ui/DebugPanelOverlay.kt`
+**Reads:** `physics-and-tuning.md` (Section 8), `ui-hud-layout.md`, `no-forward-debt.md`, `TuningConstants.kt`
+**Touches:** `HudSystem.kt` (add debug button to HUD stage), `SettingsData` in `Services.kt` (add `debugPanelEnabled` flag), `GameLoop.kt` (render overlay), `ECSBootstrapper.kt` (pass debug overlay to BootstrapResult)
+**Depends on:** none
+
+**Scope:**
+1. Create `DebugPanelOverlay.kt` — a Scene2D overlay (similar pattern to `PauseOverlay.kt`):
+   - Master toggle at top to enable/disable overrides. When off, game uses `TuningConstants` defaults.
+   - Horizontally scrolling container of vertical sliders — one per tuning constant in `TuningConstants.kt` (currently ~20 constants). Each slider shows constant name, current value, min/max range.
+   - Values can be tapped to type a number directly.
+   - Session-only persistence — values reset on app restart, never written to disk.
+2. Add a small debug button (gear/wrench icon) to HudSystem, visible only when `debugPanelEnabled` is true in settings. Position top-right, offset from pause icon.
+3. Add `debugPanelEnabled: Boolean = false` to `SettingsData`. Wire the settings overlay to include a "Debug Panel" toggle.
+4. Wire the overlay into `GameLoop.kt` render cycle (render after pause overlay, same pattern).
+5. When overrides are active, the overlay should provide values that `PhysicsSystem`, `InputSystem`, etc. can read instead of `TuningConstants` compiled defaults. Use a simple `DebugOverrides` object pattern — systems check `DebugOverrides.gravity ?: TuningConstants.GRAVITY`.
+
+**Acceptance:** Settings has a Debug Panel toggle. When enabled, a button appears on HUD. Tapping it opens a panel with sliders for all tuning constants. Overrides affect gameplay in real time. Build passes. No per-frame allocations in the override lookup path.
+
+---
+
+### WP-31: Handedness Configuration
+
+**Status:** ready
+**Backlog item:** #19 (handedness configuration)
+**Owns:** none (changes are small and distributed)
+**Reads:** `ui-hud-layout.md` (Section 8, 11), `input-system.md`, `no-forward-debt.md`
+**Touches:** `HudSystem.kt` (mirror steer meter + slider visual positions), `AttractScreen.kt` (settings overlay label)
+**Depends on:** none
+
+**Scope:**
+1. **Mirror steer budget meter**: In `HudSystem.kt`, the steer meter segments are currently hardcoded to the right edge (`WORLD_WIDTH - EDGE_MARGIN - STEER_METER_WIDTH`). When `sliderSide == "right"`, mirror the meter to the left edge (`EDGE_MARGIN`). The meter should always be on the opposite side from the slider per `ui-hud-layout.md`.
+2. **Mirror slider visual**: The angle slider thumb and track visual in HudSystem should render on whichever side `sliderSide` specifies. Currently it renders on the left. Add right-side positioning when `sliderSide == "right"`.
+3. **Mirror bomb button**: The bomb button is currently bottom-right. When slider is on the right, move bomb button to bottom-left so it doesn't overlap the slider.
+4. **Settings label**: Ensure the settings overlay toggle for slider side has a clear label (e.g., "Slider Side: Left / Right").
+5. Read `sliderSide` from the `SettingsData` that is already loaded in `LevelScreen.show()` and passed to `InputRouter`. Pass it to `HudSystem` as well so it can position elements correctly.
+
+**Acceptance:** When slider side is set to "right", the angle slider renders on the right edge, steer meter mirrors to the left, and bomb button moves to bottom-left. Input routing already works (done in WP-24). Build passes. No visual overlap between mirrored elements.
+
+---
+
+### WP-32: Big Bomb Meteor Visual Feedback
+
+**Status:** ready
+**Backlog items:** #10 (Big Bomb meteor feedback), #18 (Big Bomb meteor sprite set)
+**Owns:** `RenderSystem.kt` (Big Bomb color ramp rendering)
+**Reads:** `game-design-document.md` (Section 9), `ui-hud-layout.md` (Section 8), `physics-and-tuning.md` (Section 8 constants #17-18), `no-forward-debt.md`
+**Touches:** `InputSystem.kt` (read `isBigBombActive`), new placeholder meteor sprite assets
+**Depends on:** none
+
+**Scope:**
+1. **Alpha-build color ramp (backlog #10):** In `RenderSystem.processEntity()`, when `InputSystem.isBigBombActive` is true and the entity is the ball:
+   - Calculate normalized depth: `(HORIZON_Y - ball.y) / HORIZON_Y`
+   - Below `BIG_BOMB_COLOR_START_DEPTH` (0.25): normal ball color
+   - Between START and MAX: linearly interpolate red overlay alpha from 0 to 1
+   - At/above `BIG_BOMB_COLOR_MAX_DEPTH` (0.90): full red with subtle bright glow
+   - Apply via `batch.setColor()` tint lerp toward RED
+2. **Screen-edge flash on Big Bomb launch:** Brief white flash overlay (0.1s fade) when Big Bomb activates — render a full-screen white quad with decaying alpha in RenderSystem or GameLoop.
+3. **Placeholder meteor sprite (backlog #18):** Create a simple placeholder fireball PNG (64x64, orange-red gradient circle with flame trail) in `assets/sprites/meteor.png`. RenderSystem should swap to this sprite when Big Bomb is active and depth >= `BIG_BOMB_COLOR_MAX_DEPTH`. Fall back to the normal ball sprite + red tint at lesser depths.
+4. RenderSystem needs access to `InputSystem.isBigBombActive`. Pass `InputSystem` reference to RenderSystem constructor, or access via the ECS engine. Prefer constructor injection (same pattern as CollisionSystem).
+
+**Acceptance:** Big Bomb flights show progressive red tint as the ball travels deeper. At max depth, ball renders as a red-hot meteor. Screen flashes white on Big Bomb launch. Placeholder meteor sprite exists. Build passes. Normal kicks are visually unaffected.
+
+---
+
+### WP-33: Documentation Batch A — Audio, Assets, Cosmetics, Seasonal
+
+**Status:** ready
+**Backlog items:** #14 (Audio Spec), #15 (Asset Registry), #16 (Cosmetic & Unlock Spec), #17 (Seasonal Variant Templates)
+**Owns:** new `audio-spec.md`, new `asset-registry.md`, new `cosmetic-unlock-spec.md`, new `seasonal-variants.md`
+**Reads:** `game-design-document.md`, `ui-hud-layout.md`, `save-and-persistence.md`, `menu-and-navigation-flow.md`
+**Touches:** none
+**Depends on:** none
+
+**Scope:**
+1. **#14 — Audio Spec (`audio-spec.md`):** Master list of all sound effects with asset IDs, format (OGG recommended for Android), suggested duration, volume levels, and mixing/priority rules. GDD Section 9 describes ~12 cues by feel — translate each into an implementable asset definition. Include: kick sounds (normal, Big Bomb), impact sounds (glass, metal, wood), score chime, streak milestone, UI sounds (button tap, slider drag).
+2. **#15 — Asset Registry (`asset-registry.md`):** Catalog of all known and planned assets organized by category: sprites (ball, targets, effects), sounds (from audio spec), particle effects, backgrounds, level JSONs. Include asset ID, file path, format, source tool, and style notes. Note which assets exist vs. are placeholder vs. are planned.
+3. **#16 — Cosmetic & Unlock Spec (`cosmetic-unlock-spec.md`):** Implementation spec for GDD Section 7: ball skins, impact effects, trail effects. Cover: data model (what gets stored in profile.json), unlock thresholds (score milestones, streak achievements, distance milestones), selection UI in the cosmetics overlay, preview before unlock, runtime application to ball rendering in RenderSystem.
+4. **#17 — Seasonal Variant Templates (`seasonal-variants.md`):** Schema/template for the 5 planned variants (Summer Block Party, Halloween, Winter Holidays, Rainy Day, Garage Sale). For each: background swap, target reskin list, spawn-lane modifications, special scoring rules (if any), unlock conditions.
+
+**Acceptance:** Four new spec documents exist with implementable detail. Each references relevant GDD sections. No code changes.
+
+---
+
+### WP-34: Documentation Batch B — Testing, Tips, Trajectory, A11y, README
+
+**Status:** ready
+**Backlog items:** #20 (Testing & Performance Plan), #21 (Tips System Spec), #22 (Trajectory Preview Spec), #23 (Accessibility & Localization), #24 (Update README)
+**Owns:** new `testing-performance-plan.md`, new `tips-system-spec.md`, new `trajectory-preview-spec.md`, new `accessibility-localization.md`, updated `README.md`
+**Reads:** `game-design-document.md`, `technical-architecture.md`, `physics-and-tuning.md`, `ui-hud-layout.md`
+**Touches:** none
+**Depends on:** none
+
+**Scope:**
+1. **#20 — Testing & Performance Plan (`testing-performance-plan.md`):** Target devices (min API 26, min 3GB RAM), frame rate target (60 FPS), input latency budget (<16ms touch-to-response), physics budget, rendering budget, memory budget for assets. Testing strategy: unit tests for physics math, integration tests for state machine, manual test matrix for device compatibility.
+2. **#21 — Tips System Spec (`tips-system-spec.md`):** Rendering/dismissal UI, trigger logic, tip rotation/frequency, extensibility. GDD Section 10 defines 4 starter tips. Spec should cover: when tips appear (first N kicks, after idle, after streak break), display duration, dismissal (tap or auto-fade), data model for tip content, how to add new tips.
+3. **#22 — Trajectory Preview Spec (`trajectory-preview-spec.md`):** Dotted arc calculation (simplified physics forward-sim), update frequency during AIMING (every frame) vs. BALL_IN_FLIGHT (hidden), visual style (dot spacing, color, fade with distance), performance budget (max dots, LOD). Reference existing `TrajectorySystem.kt` implementation.
+4. **#23 — Accessibility & Localization (`accessibility-localization.md`):** Colorblind mode considerations (avoid red/green only signals — Big Bomb uses red, consider alternative), text localization approach (string table vs. hardcoded), font sizing for screen densities, touch target minimum sizes (48dp per Android guidelines).
+5. **#24 — Update README.md:** Reflect current project state: three-input model, 2-axis steer with diminishing returns, ball shadow, Big Bomb, ECS architecture. Add references to all spec documents. Include build instructions and project structure overview.
+
+**Acceptance:** Five documents created/updated with implementable detail. README accurately reflects current project state. No code changes.
+
+---
+
+### Wave 7 Conflict Check
+
+- HudSystem.kt: WP-30 touches (debug button), WP-31 touches (mirror positions) — different code sections, acceptable
+- Services.kt (SettingsData): only WP-30 touches (add debugPanelEnabled)
+- RenderSystem.kt: only WP-32 (owns)
+- InputSystem.kt: only WP-32 touches (read isBigBombActive)
+- GameLoop.kt: only WP-30 touches (render debug overlay)
+- ECSBootstrapper.kt: only WP-30 touches (pass debug overlay)
+- AttractScreen.kt: only WP-31 touches (settings label)
+- All doc files: WP-33 and WP-34 own separate files, no overlap
+- No code files shared between doc WPs and code WPs
+
+---
+
 ## Completed Work Packages
 
 <details>
