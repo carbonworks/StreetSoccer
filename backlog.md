@@ -6,88 +6,13 @@ Items are ordered by priority (top = do first). Tags indicate category. Wave ass
 
 | #  | Item | Tag | Wave |
 |----|------|-----|------|
-| 25 | Physics debug panel | dev-tool | → WP-30 (Wave 7) |
-| 10 | Big Bomb meteor feedback | feature | → WP-32 (Wave 7) |
 | 13 | Cosmetic & unlock system | feature | Unassigned |
-| 14 | Audio Spec | doc | → WP-33 (Wave 7) |
-| 15 | Asset Registry (doc + placeholders) | doc | → WP-33 (Wave 7) |
-| 16 | Cosmetic & Unlock System Spec | doc | → WP-33 (Wave 7) |
-| 17 | Seasonal Variant Templates | doc | → WP-33 (Wave 7) |
-| 18 | Big Bomb Meteor Sprite Set | beta | → WP-32 (Wave 7) |
-| 19 | Handedness Configuration | beta | → WP-31 (Wave 7) |
-| 20 | Testing & Performance Plan | doc | → WP-34 (Wave 7) |
-| 21 | Tips System Spec | doc | → WP-34 (Wave 7) |
-| 22 | Trajectory Preview Spec | doc | → WP-34 (Wave 7) |
-| 23 | Accessibility & Localization | doc | → WP-34 (Wave 7) |
-| 24 | Update README.md | doc | → WP-34 (Wave 7) |
 
 ## Item Details
 
-### 25. Physics debug panel `dev-tool`
-
-In-game panel for live-tuning all ball flight constants (gravity, max kick speed, drag, Magnus coefficient, spin decay, steer sensitivity, etc.) without rebuilding.
-
-**Settings integration:** A "Debug Panel" toggle in the Settings overlay. When enabled, a small button appears on the gameplay HUD. Tapping the button opens the debug panel overlay.
-
-**Panel layout:**
-- A master toggle at the top to enable/disable overrides. When off, the game uses `TuningConstants` defaults regardless of slider positions. When on, slider values replace the compiled defaults for the current session.
-- Below the toggle, a horizontally scrolling container of vertical sliders — one per tuning constant. Each slider shows the constant name, current value, and min/max range.
-- Each slider has a "?" icon that, when tapped, shows an alert dialog describing what the constant controls, its valid range, and gameplay effect.
-- Values can also be set by tapping the current value label and typing a number directly.
-
-**Persistence:** Override values are session-only by default (reset on app restart). The panel does not write to `TuningConstants.kt` or any save file.
-
-### 10. Big Bomb meteor feedback `feature`
-
-Replace the alpha-build red overlay with dedicated fireball sprite + flame trail for Big Bomb flights. See `ui-hud-layout.md` Section 11.
-
 ### 13. Cosmetic & unlock system `feature`
 
-Ball skins, impact effects, and trail effects (GDD Section 7): selection UI, preview before unlock, unlock threshold calculations (score milestones, streak achievements, distance milestones), runtime application to ball rendering.
-
-### 14. Audio Spec `doc`
-
-Master list of all sound effects with asset IDs, format, duration, volume levels, and mixing/priority rules. GDD Section 9 describes ~12 cues by feel ("crisp glass-break", "deep metallic clang", etc.) but no implementable asset definitions exist.
-
-### 15. Asset Registry (doc + placeholders) `doc`
-
-Starter version listing all known and planned assets: sprites (ball skins, impact effects, trail effects), sounds (from Audio Spec), particle effects (glass-shatter, confetti, sparks, smoke, splinters), background images, and level JSONs. Include asset IDs, source tool, and style notes. Generate Flat 2.0 style placeholder SVGs for all visual elements that don't yet have assets.
-
-### 16. Cosmetic & Unlock System Spec `doc`
-
-Implementation details for ball skins, impact effects, and trail effects: selection UI, preview before unlock, unlock threshold calculations, runtime application to ball rendering.
-
-### 17. Seasonal Variant Templates `doc`
-
-JSON files or schema extensions for the 5 planned variants (Summer Block Party, Halloween, Winter Holidays, Rainy Day, Garage Sale). GDD Section 6 describes thematic changes but no level data or target/spawn-lane modifications are defined.
-
-### 18. Big Bomb Meteor Sprite Set `beta`
-
-Replace the alpha-build red overlay with a dedicated fireball sprite + flame trail for Big Bomb flights. See `ui-hud-layout.md` Section 11.
-
-### 19. Handedness Configuration `beta`
-
-Settings toggle to move the angle slider to the right edge and mirror the steer budget meter. See `ui-hud-layout.md` Section 11.
-
-### 20. Testing & Performance Plan `doc`
-
-Target devices (min API level, min RAM/GPU), frame rate target (60 FPS?), input latency requirements, SVG rendering budget, memory budget for assets.
-
-### 21. Tips System Spec `doc`
-
-Rendering/dismissal UI, trigger logic implementation, tip rotation/frequency, extensibility for new tips. GDD Section 10 defines 4 starter tips.
-
-### 22. Trajectory Preview Rendering Spec `doc`
-
-Dotted arc calculation, update frequency during AIMING vs. BALL_IN_FLIGHT, visual style (dot spacing, color, fade), performance considerations. Described as a toggleable setting in GDD Section 3.
-
-### 23. Accessibility & Localization `doc`
-
-Colorblind mode considerations, text localization approach, font sizing for screen densities, touch target sizing.
-
-### 24. Update README.md `doc`
-
-Reflect current mechanics (three-input model, 2-axis steer, diminishing returns, ball shadow), add references to all spec documents.
+Ball skins, impact effects, and trail effects (GDD Section 7): selection UI, preview before unlock, unlock threshold calculations (score milestones, streak achievements, distance milestones), runtime application to ball rendering. See `cosmetic-unlock-spec.md` for implementation spec.
 
 ## Completed
 
@@ -129,3 +54,16 @@ Reflect current mechanics (three-input model, 2-axis steer, diminishing returns,
 - [x] #40 — Integrate level JSON parsing — LevelData.fromJson() drives ECSBootstrapper entity creation (WP-26, Wave 6)
 - [x] #41 — Remove fragile shadow heuristic — RenderSystem uses only BallShadowComponent (WP-27, Wave 6)
 - [x] #42 — AndroidLauncher lifecycle overrides — onPause/onResume/onDestroy with Log.d() (WP-29, Wave 6)
+- [x] #25 — Physics debug panel — DebugPanelOverlay with sliders for all tuning constants, DebugOverrides singleton (WP-30, Wave 7)
+- [x] #10 — Big Bomb meteor feedback — Progressive red tint, screen flash, procedural meteor sprite (WP-32, Wave 7)
+- [x] #18 — Big Bomb Meteor Sprite Set — Procedural fireball texture swapped at max depth (WP-32, Wave 7)
+- [x] #19 — Handedness Configuration — HUD mirrors slider, steer meter, bomb button based on sliderSide (WP-31, Wave 7)
+- [x] #14 — Audio Spec — 22 sound cues with asset IDs, mixing rules, volume model (WP-33, Wave 7)
+- [x] #15 — Asset Registry — 67 assets cataloged across all categories (WP-33, Wave 7)
+- [x] #16 — Cosmetic & Unlock System Spec — Data model, 13 items, unlock thresholds (WP-33, Wave 7)
+- [x] #17 — Seasonal Variant Templates — 5 variant definitions with JSON schema (WP-33, Wave 7)
+- [x] #20 — Testing & Performance Plan — Device targets, budgets, test strategy (WP-34, Wave 7)
+- [x] #21 — Tips System Spec — TipSystem design, 4 starter tips, trigger logic (WP-34, Wave 7)
+- [x] #22 — Trajectory Preview Spec — Arc calculation, visual style, performance budget (WP-34, Wave 7)
+- [x] #23 — Accessibility & Localization — Colorblind, touch targets, font scaling, string tables (WP-34, Wave 7)
+- [x] #24 — Update README.md — Full rewrite with current mechanics, build instructions, doc index (WP-34, Wave 7)

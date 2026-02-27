@@ -433,7 +433,7 @@ Physics debug panel, handedness mirroring, Big Bomb visual feedback, and full do
 
 ### WP-30: Physics Debug Panel
 
-**Status:** ready
+**Status:** done
 **Backlog item:** #25 (physics debug panel)
 **Owns:** new `core/.../ui/DebugPanelOverlay.kt`
 **Reads:** `physics-and-tuning.md` (Section 8), `ui-hud-layout.md`, `no-forward-debt.md`, `TuningConstants.kt`
@@ -457,7 +457,7 @@ Physics debug panel, handedness mirroring, Big Bomb visual feedback, and full do
 
 ### WP-31: Handedness Configuration
 
-**Status:** ready
+**Status:** done
 **Backlog item:** #19 (handedness configuration)
 **Owns:** none (changes are small and distributed)
 **Reads:** `ui-hud-layout.md` (Section 8, 11), `input-system.md`, `no-forward-debt.md`
@@ -477,7 +477,7 @@ Physics debug panel, handedness mirroring, Big Bomb visual feedback, and full do
 
 ### WP-32: Big Bomb Meteor Visual Feedback
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #10 (Big Bomb meteor feedback), #18 (Big Bomb meteor sprite set)
 **Owns:** `RenderSystem.kt` (Big Bomb color ramp rendering)
 **Reads:** `game-design-document.md` (Section 9), `ui-hud-layout.md` (Section 8), `physics-and-tuning.md` (Section 8 constants #17-18), `no-forward-debt.md`
@@ -501,7 +501,7 @@ Physics debug panel, handedness mirroring, Big Bomb visual feedback, and full do
 
 ### WP-33: Documentation Batch A — Audio, Assets, Cosmetics, Seasonal
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #14 (Audio Spec), #15 (Asset Registry), #16 (Cosmetic & Unlock Spec), #17 (Seasonal Variant Templates)
 **Owns:** new `audio-spec.md`, new `asset-registry.md`, new `cosmetic-unlock-spec.md`, new `seasonal-variants.md`
 **Reads:** `game-design-document.md`, `ui-hud-layout.md`, `save-and-persistence.md`, `menu-and-navigation-flow.md`
@@ -520,7 +520,7 @@ Physics debug panel, handedness mirroring, Big Bomb visual feedback, and full do
 
 ### WP-34: Documentation Batch B — Testing, Tips, Trajectory, A11y, README
 
-**Status:** ready
+**Status:** done
 **Backlog items:** #20 (Testing & Performance Plan), #21 (Tips System Spec), #22 (Trajectory Preview Spec), #23 (Accessibility & Localization), #24 (Update README)
 **Owns:** new `testing-performance-plan.md`, new `tips-system-spec.md`, new `trajectory-preview-spec.md`, new `accessibility-localization.md`, updated `README.md`
 **Reads:** `game-design-document.md`, `technical-architecture.md`, `physics-and-tuning.md`, `ui-hud-layout.md`
