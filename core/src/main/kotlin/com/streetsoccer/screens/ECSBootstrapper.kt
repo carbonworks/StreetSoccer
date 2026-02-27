@@ -28,6 +28,7 @@ import com.streetsoccer.services.AudioService
 import com.streetsoccer.services.SessionAccumulator
 import com.streetsoccer.state.GameStateListener
 import com.streetsoccer.state.GameStateManager
+import com.streetsoccer.ui.DebugPanelOverlay
 import com.streetsoccer.ui.PauseOverlay
 
 /**
@@ -46,7 +47,8 @@ class ECSBootstrapper(
     private val inputRouter: InputRouter,
     private val audioService: AudioService,
     private val assets: AssetManager,
-    private val trajectoryPreviewEnabled: Boolean
+    private val trajectoryPreviewEnabled: Boolean,
+    private val debugPanelEnabled: Boolean = false
 ) {
 
     /**
@@ -65,6 +67,7 @@ class ECSBootstrapper(
         val trajectorySystem: TrajectorySystem,
         val inputMultiplexer: InputMultiplexer,
         val pauseOverlay: PauseOverlay,
+        val debugPanelOverlay: DebugPanelOverlay?,
         /** Catcher placeholder texture, owned by the caller for disposal. */
         val catcherTexture: Texture?
     )
@@ -98,7 +101,7 @@ class ECSBootstrapper(
         )
         val renderSystem = RenderSystem(batch, inputSystem)
         val spawnSystem = SpawnSystem(gameStateManager)
-        val hudSystem = HudSystem(gameStateManager, sessionAccumulator).apply {
+        val hudSystem = HudSystem(gameStateManager, sessionAccumulator, debugPanelEnabled).apply {
             sliderSide = inputRouter.sliderSide
         }
         val catcherSystem = CatcherSystem(gameStateManager, engine, inputSystem)
@@ -130,16 +133,27 @@ class ECSBootstrapper(
         )
         pauseOverlay.hide()
 
+        // --- Create debug panel overlay (only if enabled in settings) ---
+        val debugPanelOverlay = if (debugPanelEnabled) {
+            DebugPanelOverlay().apply { hide() }
+        } else {
+            null
+        }
+
         // --- Register pause state listener ---
         gameStateManager.addListener(pauseStateListener)
 
         // --- Build input multiplexer with priority order ---
         // 1. Back button handler (highest priority)
-        // 2. Pause overlay stage (when visible, consumes all taps)
-        // 3. HUD stage (for pause icon taps)
-        // 4. InputRouter (for gameplay gestures)
+        // 2. Debug panel overlay stage (when visible, consumes taps)
+        // 3. Pause overlay stage (when visible, consumes all taps)
+        // 4. HUD stage (for pause icon and debug button taps)
+        // 5. InputRouter (for gameplay gestures)
         val inputMultiplexer = InputMultiplexer()
         inputMultiplexer.addProcessor(backButtonProcessor)
+        if (debugPanelOverlay != null) {
+            inputMultiplexer.addProcessor(debugPanelOverlay.stage)
+        }
         inputMultiplexer.addProcessor(pauseOverlay.stage)
         inputMultiplexer.addProcessor(hudSystem.getStage())
         inputMultiplexer.addProcessor(inputRouter)
@@ -156,6 +170,7 @@ class ECSBootstrapper(
             trajectorySystem = trajectorySystem,
             inputMultiplexer = inputMultiplexer,
             pauseOverlay = pauseOverlay,
+            debugPanelOverlay = debugPanelOverlay,
             catcherTexture = catcherTexture
         )
     }
