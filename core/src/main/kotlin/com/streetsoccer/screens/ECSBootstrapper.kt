@@ -96,7 +96,7 @@ class ECSBootstrapper(
         val collisionSystem = CollisionSystem(
             contactListener, gameStateManager, sessionAccumulator, engine, audioService, inputSystem
         )
-        val renderSystem = RenderSystem(batch)
+        val renderSystem = RenderSystem(batch, inputSystem)
         val spawnSystem = SpawnSystem(gameStateManager)
         val hudSystem = HudSystem(gameStateManager, sessionAccumulator)
         val catcherSystem = CatcherSystem(gameStateManager, engine, inputSystem)
